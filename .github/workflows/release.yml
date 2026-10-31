@@ -6,6 +6,13 @@ name: Sürüm yayınla
 on:
   push:
     tags: ["v*"]
+  # Elle: Actions → "Sürüm yayınla" → Run workflow. Etiket versionName'den (vX.Y.Z) oluşturulur.
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "Sürüm notları"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -27,6 +34,7 @@ jobs:
 
       - name: Anahtar ve sürüm kontrolü
         env:
+          GH_TOKEN: ${{ github.token }}
           HAS_KEY: ${{ secrets.KOKPIT_KEYSTORE_B64 != '' && secrets.KOKPIT_KEYSTORE_PASSWORD != '' }}
         run: |
           if [ "$HAS_KEY" != "true" ]; then
@@ -34,7 +42,12 @@ jobs:
             exit 1
           fi
           NAME=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-          if [ "v$NAME" != "$GITHUB_REF_NAME" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            if gh release view "v$NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "::error::v$NAME zaten yayınlanmış. Önce versionCode/versionName'i artırın."
+              exit 1
+            fi
+          elif [ "v$NAME" != "$GITHUB_REF_NAME" ]; then
             echo "::error::Etiket ($GITHUB_REF_NAME) ile versionName (v$NAME) aynı değil."
             exit 1
           fi
@@ -51,8 +64,10 @@ jobs:
       - name: version.json ve yayın
         env:
           GH_TOKEN: ${{ github.token }}
+          INPUT_NOTES: ${{ github.event.inputs.notes }}
         run: |
           set -euo pipefail
+          TAG_NAME="v$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)"
           CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
           NAME=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           APK="kokpit-$NAME.apk"
@@ -63,12 +78,14 @@ jobs:
           if grep -q "CN=Android Debug" signer.txt; then echo "::error::Debug anahtarıyla imzalanmış"; exit 1; fi
           SHA=$(sha256sum "$APK" | cut -d' ' -f1)
           SIZE=$(stat -c %s "$APK")
-          URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/$APK"
+          URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_NAME/$APK"
           python3 - "$CODE" "$NAME" "$URL" "$SHA" "$SIZE" <<'PY'
-          import json, sys, subprocess
+          import json, os, sys, subprocess
           code, name, url, sha, size = sys.argv[1:]
-          notes = subprocess.run(["git", "tag", "-l", "--format=%(contents)", f"v{name}"], capture_output=True, text=True).stdout.strip()
+          notes = os.environ.get("INPUT_NOTES", "").strip() or subprocess.run(["git", "tag", "-l", "--format=%(contents)", f"v{name}"], capture_output=True, text=True).stdout.strip()
           json.dump({"versionCode": int(code), "versionName": name, "apk": url, "sha256": sha, "sizeBytes": int(size), "notes": notes},
                     open("version.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
           PY
-          gh release create "$GITHUB_REF_NAME" "$APK" version.json --title "Kokpit $NAME" --notes-from-tag
+          NOTES=$(python3 -c "import json;print(json.load(open('version.json'))['notes'] or 'Kokpit $NAME')")
+          # Elle çalıştırmada etiket burada, bu commit üzerinde oluşturulur.
+          gh release create "$TAG_NAME" "$APK" version.json --title "Kokpit $NAME" --notes "$NOTES" --target "$GITHUB_SHA"
