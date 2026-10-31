@@ -1,0 +1,29 @@
+# Kokpit 9-3 · güvenli kapatma listesi
+# Araçta işe yaramayan, kapatılınca radyo / Bluetooth / CarPlay / GPS / MCU'yu etkilemeyen
+# paketler. Hiçbiri SİLİNMEZ, yalnızca "devre dışı" bırakılır; geri-al ile geri açılır.
+# Satır başına bir paket; # sonrası açıklamadır. Cihazda olmayanlar atlanır.
+
+com.mediatek.mtklogger                     # sürekli log yazar, belleği ve depolamayı yorar
+com.mediatek.ygps                          # GPS test aracı
+com.mediatek.duraspeed                     # arka plan uygulamalarını öldürür (Kokpit, ZLink dahil)
+com.android.printspooler                   # yazdırma
+com.android.bips                           # yazıcı eklentisi
+com.android.printservice.recommendation    # yazıcı önerileri
+com.android.dreams.basic                   # ekran koruyucu
+com.android.dreams.phototable              # fotoğraf ekran koruyucu
+com.android.wallpaper.livepicker           # canlı duvar kâğıdı seçici
+com.android.galaxy4                        # canlı duvar kâğıdı
+com.android.noisefield                     # canlı duvar kâğıdı
+com.android.phasebeam                      # canlı duvar kâğıdı
+com.android.magicsmoke                     # canlı duvar kâğıdı
+com.android.musicvis                       # müzik görselleştirici
+com.android.egg                            # paskalya yumurtası
+com.android.quicksearchbox                 # hızlı arama kutusu
+com.android.bookmarkprovider               # yer imi sağlayıcı
+com.android.providers.partnerbookmarks     # üretici yer imleri
+com.android.stk                            # SIM araç seti
+com.android.cellbroadcastreceiver          # hücre yayını uyarıları
+com.android.wallpaperbackup                # duvar kâğıdı yedeği
+com.android.smspush                        # WAP push
+com.android.onetimeinitializer             # tek seferlik başlatıcı
+com.google.android.feedback                # Google geri bildirim

@@ -1,0 +1,45 @@
+name: İmza anahtarı oluştur (bir kez)
+
+# Bir kerelik: imza anahtarını GitHub'ın kendi sunucusunda üretir ve doğrudan bu deponun
+# gizli kasasına (Actions secrets) koyar. Anahtar ve şifresi hiçbir yerde görünmez,
+# hiçbir dosyaya ya da depoya yazılmaz. Anahtar zaten varsa hiçbir şey yapmaz
+# (anahtar değişirse ünitedeki Kokpit güncellenemez).
+#
+# Gerekli: ANAHTAR_TOKEN adlı geçici bir secret — yalnızca bu depo için, yalnızca
+# "Secrets: Read and write" izinli fine-grained token. İş bitince token'ı silin.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  key:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Anahtarı üret ve kasaya koy
+        env:
+          GH_TOKEN: ${{ secrets.ANAHTAR_TOKEN }}
+          HAS_KEY: ${{ secrets.KOKPIT_KEYSTORE_B64 != '' }}
+          HAS_TOKEN: ${{ secrets.ANAHTAR_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          if [ "$HAS_KEY" = "true" ]; then echo "Anahtar zaten var, değiştirilmedi."; exit 0; fi
+          if [ "$HAS_TOKEN" != "true" ]; then echo "::error::ANAHTAR_TOKEN secret'ı yok."; exit 1; fi
+          umask 077
+          WORK=$(mktemp -d)
+          PASS=$(openssl rand -base64 36 | tr -d '\n/+=')
+          echo "::add-mask::$PASS"
+          keytool -genkeypair -keystore "$WORK/k.p12" -storetype PKCS12 -alias kokpit \
+            -keyalg RSA -keysize 4096 -validity 36500 \
+            -storepass "$PASS" -keypass "$PASS" -dname "CN=Kokpit, C=TR" >/dev/null 2>&1
+          base64 -w0 "$WORK/k.p12" > "$WORK/k.b64"
+          printf '%s' "$PASS" > "$WORK/p.txt"
+          gh secret set KOKPIT_KEYSTORE_B64 --repo "$GITHUB_REPOSITORY" < "$WORK/k.b64"
+          gh secret set KOKPIT_KEYSTORE_PASSWORD --repo "$GITHUB_REPOSITORY" < "$WORK/p.txt"
+          rm -rf "$WORK"
+          echo "Anahtar kasaya kondu. Şimdi ANAHTAR_TOKEN secret'ını ve token'ın kendisini silin."

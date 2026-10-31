@@ -1,0 +1,74 @@
+name: Sürüm yayınla
+
+# Yalnızca depo sahibinin gönderdiği "v*" etiketiyle çalışır (ör. v0.8.0).
+# APK, GitHub'ın gizli kasasındaki anahtarla imzalanır ve Releases'e konur.
+# Kokpit ünitede releases/latest/download/version.json adresini kontrol eder.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Anahtar ve sürüm kontrolü
+        env:
+          HAS_KEY: ${{ secrets.KOKPIT_KEYSTORE_B64 != '' && secrets.KOKPIT_KEYSTORE_PASSWORD != '' }}
+        run: |
+          if [ "$HAS_KEY" != "true" ]; then
+            echo "::error::İmza anahtarı yok. Önce 'İmza anahtarı oluştur' iş akışını çalıştırın."
+            exit 1
+          fi
+          NAME=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          if [ "v$NAME" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Etiket ($GITHUB_REF_NAME) ile versionName (v$NAME) aynı değil."
+            exit 1
+          fi
+
+      - name: Test ve imzalı derleme
+        env:
+          LANG: C.UTF-8
+          LC_ALL: C.UTF-8
+          KOKPIT_KEYSTORE_B64: ${{ secrets.KOKPIT_KEYSTORE_B64 }}
+          KOKPIT_KEYSTORE_PASSWORD: ${{ secrets.KOKPIT_KEYSTORE_PASSWORD }}
+          KOKPIT_KEY_ALIAS: kokpit
+        run: ./gradlew :app:testDebugUnitTest :app:assembleRelease
+
+      - name: version.json ve yayın
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          NAME=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          APK="kokpit-$NAME.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$APK"
+          # İmzanın gerçekten kasadaki anahtar olduğunu doğrula (debug anahtarı değil).
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$APKSIGNER" verify --print-certs "$APK" | tee signer.txt
+          if grep -q "CN=Android Debug" signer.txt; then echo "::error::Debug anahtarıyla imzalanmış"; exit 1; fi
+          SHA=$(sha256sum "$APK" | cut -d' ' -f1)
+          SIZE=$(stat -c %s "$APK")
+          URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/$APK"
+          python3 - "$CODE" "$NAME" "$URL" "$SHA" "$SIZE" <<'PY'
+          import json, sys, subprocess
+          code, name, url, sha, size = sys.argv[1:]
+          notes = subprocess.run(["git", "tag", "-l", "--format=%(contents)", f"v{name}"], capture_output=True, text=True).stdout.strip()
+          json.dump({"versionCode": int(code), "versionName": name, "apk": url, "sha256": sha, "sizeBytes": int(size), "notes": notes},
+                    open("version.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+          PY
+          gh release create "$GITHUB_REF_NAME" "$APK" version.json --title "Kokpit $NAME" --notes-from-tag

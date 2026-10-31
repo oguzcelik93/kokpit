@@ -1,0 +1,13 @@
+# Kokpit 9-3 · ek (daha cesur) liste — yalnızca kullanmadıklarınızı bırakın.
+# Kullanım: ./hizlandir.sh listeler/ek.txt   (önce guvenli.txt çalıştırılmış olabilir)
+
+com.android.email                          # e-posta
+com.android.exchange                       # Exchange hesapları
+com.android.calllogbackup                  # arama kaydı yedeği
+com.android.sharedstoragebackup            # depolama yedeği
+com.google.android.videos                  # Google TV / Play Filmler
+com.google.android.apps.photos             # Google Fotoğraflar
+com.google.android.apps.docs               # Google Drive
+com.google.android.apps.youtube.music      # YouTube Music
+com.google.android.apps.magazines          # Google Haberler
+com.google.android.talk                    # Hangouts

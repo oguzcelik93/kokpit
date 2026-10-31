@@ -1,0 +1,5 @@
+{"latitude":41.0,"longitude":29.0,"generationtime_ms":0.05,"utc_offset_seconds":10800,"timezone":"Europe/Istanbul","timezone_abbreviation":"GMT+3","elevation":40.0,
+ "current_units":{"time":"iso8601","interval":"seconds","temperature_2m":"°C","weather_code":"wmo code","is_day":""},
+ "current":{"time":"2026-10-27T15:00","interval":900,"temperature_2m":18.4,"weather_code":2,"is_day":1},
+ "daily_units":{"time":"iso8601","temperature_2m_max":"°C","temperature_2m_min":"°C","sunrise":"iso8601","sunset":"iso8601"},
+ "daily":{"time":["2026-10-27"],"temperature_2m_max":[21.0],"temperature_2m_min":[12.1],"sunrise":["2026-10-27T06:58"],"sunset":["2026-10-27T17:21"]}}
