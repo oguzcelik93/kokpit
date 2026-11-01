@@ -189,9 +189,10 @@ class WallpaperStore(private val context: Context, private val scope: CoroutineS
     }
 
     private fun select(id: String, bitmap: Bitmap) {
-        _selected.value = id
-        prefs.edit().putString(KEY_SELECTED, id).apply()
+        // Picture first, then the selection: whoever sees the new id also sees its picture.
         _image.value = toImage(bitmap)
+        prefs.edit().putString(KEY_SELECTED, id).apply()
+        _selected.value = id
     }
 
     private fun load(id: String): WallpaperImage? = BitmapFactory.decodeFile(File(dir, "$id.jpg").path)?.let(::toImage)

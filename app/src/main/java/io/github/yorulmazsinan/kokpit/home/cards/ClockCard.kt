@@ -86,6 +86,14 @@ fun ClockCard(
                 Column(Modifier.weight(1f).testTag("home_clock").combinedClickable(onClick = onOpenCalendar, onLongClick = onRecovery)) {
                     StyledClock(now)
                     Spacer(Modifier.height(6.dp))
+                    if (!io.github.yorulmazsinan.kokpit.time.TrueTime.sure) {
+                        Text(
+                            stringResource(R.string.clock_estimate_note),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.testTag("clock_estimate"),
+                        )
+                    }
                     Text(
                         now.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault()))
                             .replaceFirstChar { it.titlecase(Locale.getDefault()) },

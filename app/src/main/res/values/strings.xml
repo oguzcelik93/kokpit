@@ -408,9 +408,9 @@
     <string name="clock_section">Clock</string>
     <string name="clock_source_gps">set from GPS satellites</string>
     <string name="clock_source_internet">set from the internet</string>
-    <string name="clock_source_system">unit\'s own clock (not yet checked)</string>
+    <string name="clock_source_system">set by Android (CarPlay / internet)</string>
     <string name="clock_status">%1$s · time zone %2$s · tap for Android\'s date settings</string>
-    <string name="clock_help">This unit has no clock battery and starts on a wrong date. Kokpit corrects its clock from GPS (under open sky) or, with the hotspot on, from the internet. If the hour is off by whole hours, set the time zone (e.g. Europe/Berlin or Europe/Istanbul) in Android\'s date settings and turn on \"Automatic date &amp; time\".</string>
+    <string name="clock_help">This unit has no clock battery and starts on 1 August after every power-off. Kokpit sets its clock from GPS (under open sky), the internet (hotspot on) or the moment CarPlay sets Android\'s clock, and keeps it right while the unit is on. Until then it shows an estimate, marked ≈. If the hour is off by whole hours, set the time zone (e.g. Europe/Berlin) in Android\'s date settings.</string>
     <string name="bt_phones_title">Bluetooth phones</string>
     <string name="bt_phones_settings_help">Switch phone; automatic switch at ignition-on</string>
     <string name="bt_phones_help">Tap a phone to connect it (the current one is let go). At ignition-on, if no phone connects within 10 seconds, Kokpit tries the paired phones in turn, most recently used first.</string>
@@ -447,4 +447,6 @@
     <string name="window_album_empty">No photos yet. Every photo you send or choose is kept here.</string>
     <string name="window_album_help">Tap a photo to show it on the card. Up to 30 photos are kept; the oldest goes when a new one comes.</string>
     <string name="window_remove_help">Deletes the selected photo from the album</string>
+    <string name="clock_source_estimate">estimate — waiting for GPS, internet or CarPlay</string>
+    <string name="clock_estimate_note">≈ estimated time · waiting for GPS / internet / CarPlay</string>
 </resources>

@@ -408,9 +408,9 @@
     <string name="clock_section">Saat</string>
     <string name="clock_source_gps">GPS uydularından ayarlandı</string>
     <string name="clock_source_internet">internetten ayarlandı</string>
-    <string name="clock_source_system">ünitenin kendi saati (henüz doğrulanmadı)</string>
+    <string name="clock_source_system">Android tarafından ayarlandı (CarPlay / internet)</string>
     <string name="clock_status">%1$s · saat dilimi %2$s · Android tarih ayarları için dokunun</string>
-    <string name="clock_help">Bu ünitenin saat pili yok, açılışta yanlış tarihle başlıyor. Kokpit saatini GPS\'ten (açık havada) ya da hotspot açıksa internetten düzeltir. Saat tam saatler kadar farklıysa Android tarih ayarlarından saat dilimini seçin (ör. Europe/Berlin ya da Europe/Istanbul) ve \"Otomatik tarih ve saat\"i açın.</string>
+    <string name="clock_help">Bu ünitenin saat pili yok, her kapanıştan sonra 1 Ağustos\'la açılıyor. Kokpit saatini GPS\'ten (açık havada), internetten (hotspot açık) ya da CarPlay Android saatini ayarladığı anda alır ve ünite açık kaldıkça doğru tutar. O zamana kadar ≈ işaretli bir tahmin gösterir. Saat tam saatler kadar farklıysa Android tarih ayarlarından saat dilimini seçin (ör. Europe/Berlin).</string>
     <string name="bt_phones_title">Bluetooth telefonlar</string>
     <string name="bt_phones_settings_help">Telefon değiştir; kontak açılınca otomatik geçiş</string>
     <string name="bt_phones_help">Bağlamak için telefona dokunun (bağlı olan bırakılır). Kontak açılınca 10 saniye içinde hiçbir telefon bağlanmazsa Kokpit eşleşmiş telefonları sırayla dener; en son kullanılan önce.</string>
@@ -447,4 +447,6 @@
     <string name="window_album_empty">Henüz fotoğraf yok. Gönderdiğiniz ya da seçtiğiniz her fotoğraf burada saklanır.</string>
     <string name="window_album_help">Kartta göstermek için fotoğrafa dokunun. En çok 30 fotoğraf saklanır; yenisi gelince en eskisi silinir.</string>
     <string name="window_remove_help">Seçili fotoğrafı albümden siler</string>
+    <string name="clock_source_estimate">tahmini — GPS, internet ya da CarPlay bekleniyor</string>
+    <string name="clock_estimate_note">≈ tahmini saat · GPS / internet / CarPlay bekleniyor</string>
 </resources>

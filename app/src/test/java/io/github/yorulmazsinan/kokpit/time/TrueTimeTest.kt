@@ -28,12 +28,20 @@ class TrueTimeTest {
     }
 
     @Test
-    fun smallDifferencesAreIgnored() {
-        assertEquals(0L, clockOffset(1_000_000, 999_000))
-        // Unit woke up on 1 August, real time is 1 November.
-        val real = Instant.parse("2026-11-01T20:58:00Z").toEpochMilli()
-        val unit = Instant.parse("2026-08-01T02:06:00Z").toEpochMilli()
-        assertEquals(real - unit, clockOffset(real, unit))
+    fun resetClockIsNotBelieved() {
+        val lastKnown = Instant.parse("2026-11-01T20:58:00Z").toEpochMilli()
+        // The unit starts on its firmware date after every power-off.
+        assertFalse(systemClockPlausible(Instant.parse("2026-08-01T02:01:00Z").toEpochMilli(), lastKnown))
+        assertFalse(systemClockPlausible(Instant.parse("2024-05-01T00:00:00Z").toEpochMilli(), 0L))
+        // CarPlay / internet set it right.
+        assertTrue(systemClockPlausible(Instant.parse("2026-11-02T08:15:00Z").toEpochMilli(), lastKnown))
+    }
+
+    @Test
+    fun anchorSurvivesClockResets() {
+        val learnt = Instant.parse("2026-11-01T20:58:00Z").toEpochMilli()
+        // Learnt at 1 000 s of uptime; 90 minutes later the system clock may say anything.
+        assertEquals(learnt + 90 * 60_000L, anchoredNow(learnt, 1_000_000L, 1_000_000L + 90 * 60_000L))
     }
 
     @Test

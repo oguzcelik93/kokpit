@@ -93,6 +93,7 @@ fun SettingsScreen(
                     io.github.yorulmazsinan.kokpit.time.TimeSource.GPS -> stringResource(R.string.clock_source_gps)
                     io.github.yorulmazsinan.kokpit.time.TimeSource.INTERNET -> stringResource(R.string.clock_source_internet)
                     io.github.yorulmazsinan.kokpit.time.TimeSource.SYSTEM -> stringResource(R.string.clock_source_system)
+                    io.github.yorulmazsinan.kokpit.time.TimeSource.ESTIMATE -> stringResource(R.string.clock_source_estimate)
                 }
                 val shown = io.github.yorulmazsinan.kokpit.time.TrueTime.dateTime()
                     .format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy HH:mm", java.util.Locale.getDefault()))

@@ -26,8 +26,27 @@ class TimeSync(private val context: Context, private val http: OkHttpClient, pri
     private var lastGpsSyncElapsed = 0L
     private var nmea: OnNmeaMessageListener? = null
 
+    private val clockReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(c: Context, intent: android.content.Intent) = TrueTime.onSystemClockSet(context)
+    }
+
     fun start() {
         TrueTime.init(context)
+        // CarPlay, NTP or the driver setting the system clock fixes Kokpit's at once.
+        androidx.core.content.ContextCompat.registerReceiver(
+            context, clockReceiver,
+            android.content.IntentFilter().apply {
+                addAction(android.content.Intent.ACTION_TIME_CHANGED)
+                addAction(android.content.Intent.ACTION_TIMEZONE_CHANGED)
+            },
+            androidx.core.content.ContextCompat.RECEIVER_EXPORTED,
+        )
+        scope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(60_000)
+                TrueTime.remember(context)
+            }
+        }
         // With the ADB-granted permission, let Android keep its own clock right too.
         if (Performance.canWriteSecureSettings(context)) {
             runCatching {
@@ -72,6 +91,24 @@ class TimeSync(private val context: Context, private val http: OkHttpClient, pri
             TrueTime.update(context, utc, TimeSource.GPS)
         }
         if (runCatching { lm.addNmeaListener(listener, handler) }.getOrDefault(false)) nmea = listener
+        // Some units never deliver NMEA to apps; a GPS fix's own timestamp is the second way.
+        runCatching {
+            // A full object, not a lambda: Android 9's LocationListener has no default methods.
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 60_000L, 0f, object : android.location.LocationListener {
+                override fun onLocationChanged(location: android.location.Location) {
+                    val now = SystemClock.elapsedRealtime()
+                    if (location.time >= EARLIEST_PLAUSIBLE_MS && (lastGpsSyncElapsed == 0L || now - lastGpsSyncElapsed >= 10 * 60_000L)) {
+                        lastGpsSyncElapsed = now
+                        TrueTime.update(context, location.time, TimeSource.GPS)
+                    }
+                }
+
+                @Deprecated("Android 9 still calls it")
+                override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
+                override fun onProviderEnabled(provider: String) = Unit
+                override fun onProviderDisabled(provider: String) = Unit
+            }, Looper.getMainLooper())
+        }
     }
 
     /** After the location permission was granted. */
