@@ -71,6 +71,8 @@ import io.github.yorulmazsinan.kokpit.connect.PowerEventLog
 import io.github.yorulmazsinan.kokpit.update.UpdateScreen
 import io.github.yorulmazsinan.kokpit.update.UpdateState
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import io.github.yorulmazsinan.kokpit.home.cards.IdleScreen
 import io.github.yorulmazsinan.kokpit.home.cards.shouldIdle
 import io.github.yorulmazsinan.kokpit.intro.currentTemperature
@@ -251,6 +253,7 @@ object Routes {
     const val UPDATE = "update"
     const val BT_PHONES = "bt-phones"
     const val WINDOW = "window"
+    const val PHONE_PANEL = "phone-panel"
 }
 
 /** Dock slots with a Kokpit screen; those screens and home keep the dock on the bottom. */
@@ -350,6 +353,13 @@ private fun KokpitShell(container: AppContainer, homeState: HomeUiState) {
         val brightness by container.brightnessPanel.collectAsStateWithLifecycle()
         if (brightness) BrightnessPanel(onDismiss = { container.brightnessPanel.value = false })
         val update by container.updater.state.collectAsStateWithLifecycle()
+        // While the phone panel is open, say so (and offer to close it) on the home screen.
+        val panelStatus by container.phonePanel.status.collectAsStateWithLifecycle()
+        if (route == Routes.HOME && panelStatus != null) {
+            InfoPill(androidx.compose.ui.res.stringResource(R.string.panel_pill), Modifier.align(Alignment.BottomCenter).padding(bottom = 96.dp)) {
+                nav.navigate(Routes.PHONE_PANEL) { launchSingleTop = true }
+            }
+        }
         // Until the speed-up checklist has been opened once, a reminder sits on the home screen.
         val speedUpSeen = remember(route) { SpeedUp.wizardSeen(context) }
         if (route == Routes.HOME && (update is UpdateState.Ready || update is UpdateState.Available)) {
@@ -433,6 +443,7 @@ private fun KokpitNavHost(
                 onOpenWindow = { nav.navigate(Routes.WINDOW) { launchSingleTop = true } },
             )
         }
+        composable(Routes.PHONE_PANEL) { io.github.yorulmazsinan.kokpit.panel.PhonePanelScreen(container.phonePanel, onBack = { nav.popBackStack() }) }
         composable(Routes.WINDOW) {
             io.github.yorulmazsinan.kokpit.home.WindowScreen(container, onBack = { nav.popBackStack() }, onPickApp = { nav.navigate("picker/${it.name}") })
         }
@@ -489,6 +500,7 @@ private fun KokpitNavHost(
                 onOpenUpdate = { nav.navigate(Routes.UPDATE) },
                 onOpenBtPhones = { nav.navigate(Routes.BT_PHONES) },
                 onOpenWindow = { nav.navigate(Routes.WINDOW) },
+                onOpenPhonePanel = { nav.navigate(Routes.PHONE_PANEL) },
             )
         }
         composable(Routes.INTRO) { IntroSettingsScreen(container, onBack = { nav.popBackStack() }) }

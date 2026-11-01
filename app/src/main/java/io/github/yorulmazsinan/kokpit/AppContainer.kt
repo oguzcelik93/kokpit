@@ -109,6 +109,7 @@ class AppContainer(context: Context) {
     val timeSync = TimeSync(appContext, http, scope)
     val btConnect = BtAutoConnect(appContext, scope)
     val wallpaper = WallpaperStore(appContext, scope)
+    val phonePanel by lazy { io.github.yorulmazsinan.kokpit.panel.PhonePanel(appContext, this) }
     val resume = ResumePlayback(appContext, nowPlaying, vendorModes, btMusic)
 
     /** False between ignition off and on; nothing is sampled while the unit sleeps. */

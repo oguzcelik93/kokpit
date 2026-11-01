@@ -146,9 +146,12 @@ class WallpaperStore(private val context: Context, private val scope: CoroutineS
         scope.launch(Dispatchers.IO) { BitmapFactory.decodeFile(File(dir, "$id.jpg").path)?.let { select(id, it) } }
     }
 
-    /** Turns the selected photo a quarter clockwise. Blocking. */
-    fun rotateQuarter(): Boolean {
-        val id = _selected.value ?: return false
+    /** The stored file of an album photo (ids are digits only), or null. */
+    fun photoFile(id: String): File? = File(dir, "$id.jpg").takeIf { id.all(Char::isDigit) && it.exists() }
+
+    /** Turns a photo (the selected one by default) a quarter clockwise and shows it. Blocking. */
+    fun rotateQuarter(photoId: String? = null): Boolean {
+        val id = photoId ?: _selected.value ?: return false
         val file = File(dir, "$id.jpg")
         val bitmap = BitmapFactory.decodeFile(file.path) ?: return false
         val turned = rotate(bitmap, 90)

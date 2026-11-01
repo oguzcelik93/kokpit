@@ -451,4 +451,12 @@
     <string name="clock_estimate_note">≈ tahmini saat · GPS / internet / CarPlay bekleniyor</string>
     <string name="diagnostics_to_phone">Raporu telefona gönder (QR)</string>
     <string name="diagnostics_to_phone_help">Ünitenin hotspot\'undaki telefonla okutun. Rapor telefonda Kopyala ve İndir düğmeleriyle açılır; sohbete yapıştırın. Sayfa 10 dakika sonra ya da bu ekrandan çıkınca kapanır.</string>
+    <string name="panel_title">Telefondan yönet</string>
+    <string name="panel_open">Telefondan yönet (QR)</string>
+    <string name="panel_settings_help">Fotoğraflar, yakıt defteri, Ev/İş ve rapor telefondan</string>
+    <string name="panel_scan">Telefonunuzla okutun</string>
+    <string name="panel_scan_help">Ünitenin hotspot\'u olan telefonu kullanın. Panel telefonun tarayıcısında açılır: fotoğraf ekleyin, kart fotoğrafını seçin, yakıt girin, Ev/İş yazın, raporu görün.</string>
+    <string name="panel_close">Paneli kapat</string>
+    <string name="panel_safety">Yalnızca hotspot ağından ve bu QR\'daki kodla (her seferinde yeni) açılır. 15 dakika kullanılmazsa ya da her durumda 1 saat sonra kapanır. Uygulama kuramaz, sistem ayarlarını değiştiremez.</string>
+    <string name="panel_pill">Telefon paneli açık · kapatmak için dokunun</string>
 </resources>

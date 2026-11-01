@@ -451,4 +451,12 @@
     <string name="clock_estimate_note">≈ estimated time · waiting for GPS / internet / CarPlay</string>
     <string name="diagnostics_to_phone">Send report to phone (QR)</string>
     <string name="diagnostics_to_phone_help">Scan with the phone on the unit\'s hotspot. The report opens there with Copy and Download buttons; paste it into the chat. The page closes after 10 minutes or when you leave this screen.</string>
+    <string name="panel_title">Manage from phone</string>
+    <string name="panel_open">Manage from phone (QR)</string>
+    <string name="panel_settings_help">Photos, fuel log, home/work and the report from your phone</string>
+    <string name="panel_scan">Scan with your phone</string>
+    <string name="panel_scan_help">Use the phone that is the unit\'s hotspot. The panel opens in its browser: add photos, pick the card photo, enter fuel, set home/work, read the report.</string>
+    <string name="panel_close">Close panel</string>
+    <string name="panel_safety">Only reachable on the hotspot network, with the code in this QR (new every time). Closes after 15 minutes unused or 1 hour in any case. It can\'t install apps or change system settings.</string>
+    <string name="panel_pill">Phone panel open · tap to close</string>
 </resources>

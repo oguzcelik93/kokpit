@@ -43,13 +43,7 @@ import io.github.yorulmazsinan.kokpit.ui.theme.Dimens
 @Composable
 fun DiagnosticsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    val text = remember {
-        DiagnosticsCollector(context).collect().toText() +
-            (readCrashLog(context)?.let { "\n[last crashes]\n$it" } ?: "") +
-            "\n[media events]\n" + io.github.yorulmazsinan.kokpit.media.MediaEventLog.shared.lines().joinToString("\n") +
-            "\n\n[head unit]\n" + (context.applicationContext as io.github.yorulmazsinan.kokpit.KokpitApp).container.headUnit.probe().joinToString("\n") +
-            "\n\n[power events]\n" + io.github.yorulmazsinan.kokpit.connect.PowerEventLog.lines(context).joinToString("\n")
-    }
+    val text = remember { diagnosticsText(context) }
     val saveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri != null) {
             val ok = runCatching {
@@ -130,3 +124,11 @@ private fun copyToClipboard(context: Context, text: String) {
     clipboard.setPrimaryClip(ClipData.newPlainText("Kokpit diagnostics", text))
     Toast.makeText(context, R.string.diagnostics_copied, Toast.LENGTH_SHORT).show()
 }
+
+/** The whole diagnostics report, as shown on screen and sent to the phone. */
+fun diagnosticsText(context: Context): String =
+    DiagnosticsCollector(context).collect().toText() +
+        (readCrashLog(context)?.let { "\n[last crashes]\n$it" } ?: "") +
+        "\n[media events]\n" + io.github.yorulmazsinan.kokpit.media.MediaEventLog.shared.lines().joinToString("\n") +
+        "\n\n[head unit]\n" + (context.applicationContext as io.github.yorulmazsinan.kokpit.KokpitApp).container.headUnit.probe().joinToString("\n") +
+        "\n\n[power events]\n" + io.github.yorulmazsinan.kokpit.connect.PowerEventLog.lines(context).joinToString("\n")

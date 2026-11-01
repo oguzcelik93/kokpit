@@ -65,6 +65,7 @@ fun SettingsScreen(
     onOpenUpdate: () -> Unit = {},
     onOpenBtPhones: () -> Unit = {},
     onOpenWindow: () -> Unit = {},
+    onOpenPhonePanel: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -76,6 +77,7 @@ fun SettingsScreen(
 
     ScreenScaffold(stringResource(R.string.settings_title), onBack) {
         LazyColumn {
+            item { ListRow(stringResource(R.string.panel_open), stringResource(R.string.panel_settings_help), onClick = onOpenPhonePanel) }
             item { SectionHeader(stringResource(R.string.settings_appearance)) }
             item {
                 val modes = listOf(ThemeMode.DARK to R.string.theme_dark, ThemeMode.LIGHT to R.string.theme_light, ThemeMode.AUTO to R.string.theme_auto)
