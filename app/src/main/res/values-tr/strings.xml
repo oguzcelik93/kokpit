@@ -440,7 +440,11 @@
     <string name="window_none_found">Fotoğraf bulunamadı. Tarayıcıyla indirin ya da USB belleğe koyun.</string>
     <string name="window_set">Fotoğraf ayarlandı</string>
     <string name="window_not_image">Kokpit\'in okuyabildiği bir fotoğraf değil</string>
-    <string name="window_remove">Fotoğrafı kaldır</string>
+    <string name="window_remove">Fotoğrafı sil</string>
     <string name="window_rotate">Fotoğrafı döndür ↻</string>
-    <string name="window_rotate_help">Her dokunuşta saat yönünde çeyrek tur</string>
+    <string name="window_rotate_help">Seçili fotoğrafı saat yönünde çeyrek tur döndürür</string>
+    <string name="window_album">Albüm (%1$d)</string>
+    <string name="window_album_empty">Henüz fotoğraf yok. Gönderdiğiniz ya da seçtiğiniz her fotoğraf burada saklanır.</string>
+    <string name="window_album_help">Kartta göstermek için fotoğrafa dokunun. En çok 30 fotoğraf saklanır; yenisi gelince en eskisi silinir.</string>
+    <string name="window_remove_help">Seçili fotoğrafı albümden siler</string>
 </resources>

@@ -131,6 +131,6 @@ fun HomeRoute(
         ),
         // The dock lives in the app shell so it stays put across Phone, Music and Radio.
         showDock = false,
-        window = WindowCardState(wallpaper, browserTarget?.let(container.installedApps::label), browserIcon),
+        window = WindowCardState(wallpaper?.photo, browserTarget?.let(container.installedApps::label), browserIcon, wallpaper?.backdrop, wallpaper?.portrait == true),
     )
 }

@@ -11,6 +11,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +63,8 @@ fun WindowScreen(container: AppContainer, onBack: () -> Unit, onPickApp: (DockSl
     val scope = rememberCoroutineScope()
     val dock by container.dock.targets.collectAsStateWithLifecycle()
     val image by container.wallpaper.image.collectAsStateWithLifecycle()
+    val photos by container.wallpaper.photos.collectAsStateWithLifecycle()
+    val selected by container.wallpaper.selected.collectAsStateWithLifecycle()
     val target = dock[DockSlot.BROWSER]
     var link by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf<String?>(null) }
@@ -117,14 +131,46 @@ fun WindowScreen(container: AppContainer, onBack: () -> Unit, onPickApp: (DockSl
                     }
                 }
             }
+            item { SectionHeader(stringResource(R.string.window_album, photos.size)) }
+            if (photos.isEmpty()) {
+                item { HelpText(stringResource(R.string.window_album_empty)) }
+            } else {
+                item {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(photos, key = { it }) { id -> AlbumThumb(container, id, id == selected) { container.wallpaper.select(id) } }
+                    }
+                }
+                item { HelpText(stringResource(R.string.window_album_help)) }
+            }
             if (image != null) {
                 item {
                     ListRow(stringResource(R.string.window_rotate), stringResource(R.string.window_rotate_help)) {
                         scope.launch(Dispatchers.IO) { container.wallpaper.rotateQuarter() }
                     }
                 }
-                item { ListRow(stringResource(R.string.window_remove), null) { container.wallpaper.clear() } }
+                item { ListRow(stringResource(R.string.window_remove), stringResource(R.string.window_remove_help)) { selected?.let(container.wallpaper::delete) } }
             }
         }
+    }
+}
+
+@Composable
+private fun AlbumThumb(container: AppContainer, id: String, selected: Boolean, onClick: () -> Unit) {
+    val thumb by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, id, container.wallpaper.photos.collectAsStateWithLifecycle().value) {
+        value = withContext(Dispatchers.IO) { container.wallpaper.thumbnail(id) }
+    }
+    val shape = RoundedCornerShape(8.dp)
+    Box(
+        Modifier
+            .size(width = 132.dp, height = 96.dp)
+            .clip(shape)
+            .border(if (selected) 3.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, shape)
+            .background(Color.Black)
+            .clickable(onClick = onClick),
+    ) {
+        thumb?.let { Image(it, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize()) }
     }
 }

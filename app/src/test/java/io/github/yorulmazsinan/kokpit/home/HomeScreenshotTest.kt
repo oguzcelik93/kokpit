@@ -170,6 +170,23 @@ class HomeScreenshotTest {
         shot("saab-trips") { io.github.yorulmazsinan.kokpit.car.LogbookScreen(car, log, onBack = {}, initial = io.github.yorulmazsinan.kokpit.car.LogbookTab.TRIPS) }
     }
 
+    @Test @Config(qualifiers = "tr-w1024dp-h600dp-land-mdpi")
+    fun saabPortraitPhoto() {
+        val bmp = Bitmap.createBitmap(360, 640, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bmp)
+        val paint = android.graphics.Paint().apply {
+            shader = android.graphics.LinearGradient(0f, 0f, 360f, 640f, intArrayOf(0xFF3A6EA5.toInt(), 0xFFF2C14E.toInt(), 0xFF7A3B2E.toInt()), null, android.graphics.Shader.TileMode.CLAMP)
+        }
+        canvas.drawRect(0f, 0f, 360f, 640f, paint)
+        val tiny = Bitmap.createScaledBitmap(bmp, 24, 43, true)
+        val window = io.github.yorulmazsinan.kokpit.home.cards.WindowCardState(bmp.asImageBitmap(), "Chrome", null, tiny.asImageBitmap(), portrait = true)
+        compose.setContent { KokpitTheme(accent = ThemeAccent.SAAB_93) { DesignScale { HomeScreen(state(true), now, HomeActions(car = io.github.yorulmazsinan.kokpit.home.cards.CarShortcuts()), window = window) } } }
+        val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
+        val out = File("build/screenshots/saab-portrait.png").apply { parentFile?.mkdirs() }
+        out.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        assertTrue(out.length() > 0)
+    }
+
     private fun shot(name: String, content: @androidx.compose.runtime.Composable () -> Unit) {
         compose.setContent { KokpitTheme(accent = ThemeAccent.SAAB_93) { DesignScale { content() } } }
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()

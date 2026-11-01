@@ -440,7 +440,11 @@
     <string name="window_none_found">No photos found. Download one with the browser or put it on a USB stick.</string>
     <string name="window_set">Photo set</string>
     <string name="window_not_image">Not a photo Kokpit can read</string>
-    <string name="window_remove">Remove photo</string>
+    <string name="window_remove">Delete photo</string>
     <string name="window_rotate">Rotate photo ↻</string>
-    <string name="window_rotate_help">Quarter turn clockwise per tap</string>
+    <string name="window_rotate_help">Turns the selected photo a quarter clockwise</string>
+    <string name="window_album">Album (%1$d)</string>
+    <string name="window_album_empty">No photos yet. Every photo you send or choose is kept here.</string>
+    <string name="window_album_help">Tap a photo to show it on the card. Up to 30 photos are kept; the oldest goes when a new one comes.</string>
+    <string name="window_remove_help">Deletes the selected photo from the album</string>
 </resources>

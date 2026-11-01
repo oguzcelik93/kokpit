@@ -35,7 +35,14 @@ import io.github.yorulmazsinan.kokpit.R
 import io.github.yorulmazsinan.kokpit.ui.theme.LocalCockpitStyle
 
 /** What the window card shows: the driver's photo and the app it opens (Brave, by default). */
-data class WindowCardState(val image: ImageBitmap?, val appLabel: String?, val appIcon: ImageBitmap?)
+data class WindowCardState(
+    val image: ImageBitmap?,
+    val appLabel: String?,
+    val appIcon: ImageBitmap?,
+    /** Blurred fill behind a portrait photo. */
+    val backdrop: ImageBitmap? = null,
+    val portrait: Boolean = false,
+)
 
 /**
  * The home screen's window: a photo of the driver's choice, with a one-tap button for the
@@ -55,8 +62,15 @@ fun WindowCard(state: WindowCardState?, onOpen: () -> Unit, onSettings: () -> Un
         Box(Modifier.fillMaxSize()) {
             val image = state?.image
             if (image != null) {
-                // The photo alone, uncovered; a tap still opens the app.
-                Image(image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                if (state.portrait) {
+                    // A portrait photo fits whole; its own blurred, darkened copy fills the sides.
+                    Image(state.backdrop ?: image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)))
+                    Image(image, contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+                } else {
+                    // A landscape photo fills the card, uncovered; a tap still opens the app.
+                    Image(image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                }
             }
             if (hasApp && image == null) {
                 Row(
