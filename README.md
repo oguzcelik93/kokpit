@@ -75,6 +75,31 @@ Araç dururken ana ekrana 2 dakika (ayarlanabilir: 1/2/5/10) dokunulmazsa büyü
 tarih ve dış sıcaklık gösterilir; ekran izi kalmasın diye her dakika hafifçe kayar.
 Dokununca ya da araç hareket edince ana ekran geri gelir.
 
+### Telefondan yönetim: Kokpit Kumanda (Bluetooth)
+Ayarlar → **Telefondan yönet** ekranındaki QR iki yoldan açılır:
+- **Telefonun tarayıcısı (Wi-Fi):** telefon ünitenin ağındaysa (hotspot ya da Kokpit'in
+  kendi ağı) telefon kamerasıyla okutun; panel tarayıcıda açılır.
+- **Kokpit Kumanda uygulaması (Bluetooth):** Wi-Fi gerekmez. Telefonun üniteyle
+  Bluetooth'ta eşleşmiş olması yeterli. Uygulamada **QR'ı okut** → PIN → panel açılır.
+  Ünite bir Wi-Fi'da değilse QR yalnızca Kumanda'yla açılır.
+
+Kurulum: [Releases](https://github.com/oguzcelik93/kokpit/releases/latest) sayfasından
+`kokpit-kumanda-<sürüm>.apk`'yı telefona indirip kurun ("bilinmeyen uygulamalar" izni
+istenir). İlk açılışta "Yakındaki cihazlar" (Bluetooth) izni sorulur.
+
+Güvenlik kuralları iki yolda da aynıdır, çünkü ikisi de ünitedeki aynı panele gider:
+panel yalnızca ünitede biri açınca çalışır; QR her açılışta yeni bir 128 bit anahtar taşır;
+ardından araç sahibinin PIN'i gerekir (5 yanlış denemede giderek uzayan kilit, PIN yalnızca
+ünitede sıfırlanır); panel 15 dakika boşta kalınca ya da 1 saat dolunca kapanır ve açıkken
+ünitede uyarı görünür; yalnızca sabit işlem listesi vardır (uygulama kurma, kabuk komutu,
+sistem ayarı, dosya gezme yok). Bluetooth tarafında ünite yalnızca panel açıkken ve
+yalnızca **güvenli RFCOMM** ile dinler: sadece eşleşmiş telefonlar bağlanabilir, bağlantı
+şifrelidir. Kumanda kendi başına hiçbir şey yapamaz; telefonda yalnızca 127.0.0.1'i
+dinleyen küçük bir köprüyle panel sayfasını ünitenin sunduğu gibi gösterir.
+
+Bluetooth Wi-Fi'dan yavaştır: Kumanda büyük fotoğrafları göndermeden önce telefonda
+küçültür (en uzun kenar 1920 px); karşılama videosu yüklemek birkaç dakika sürebilir.
+
 ### USB bellekle kurulum ve güncelleme
 **İlk kurulum:** [Releases](https://github.com/oguzcelik93/kokpit/releases/latest) sayfasından `kokpit-<sürüm>.apk`'yı indirip USB belleğe kopyalayın, belleği takın, cihazın dosya
 yöneticisinden APK'ya dokunun ("bilinmeyen kaynaklar" sorulursa izin verin). Ev tuşu →
@@ -104,7 +129,9 @@ sürüm her zaman sizin onayınızla kurulur.
 1. `app/build.gradle.kts`: `versionCode`'u artırın, `versionName`'i değiştirin.
 2. Açıklamalı etiket gönderin: `git tag -a v0.8.0 -m "Bu sürümde: …" && git push origin v0.8.0`
 3. "Sürüm yayınla" iş akışı testleri çalıştırır, APK'yı kasadaki anahtarla imzalar ve
-   Releases'e `kokpit-0.8.0.apk` + `version.json` olarak koyar.
+   Releases'e `kokpit-0.8.0.apk` + `version.json` olarak koyar. Aynı anahtarla imzalanan
+   telefon uygulaması da `kokpit-kumanda-<sürüm>.apk` olarak eklenir (sürümü
+   `kumanda/build.gradle.kts`'te; Kumanda değiştiyse orada da `versionCode`'u artırın).
 
 **İmza anahtarı (bir kez):** anahtar depoda değil, GitHub'ın gizli kasasında durur.
 1. GitHub → Settings → Developer settings → Fine-grained tokens → *Generate new token*:
@@ -202,6 +229,8 @@ Cihazda görünen ad "Kokpit", tema adı "Klasik Kokpit (yeşil)".
 ```bash
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 # APK: app/build/outputs/apk/debug/app-debug.apk
+./gradlew :kumanda:testDebugUnitTest :kumanda:assembleDebug
+# Telefon uygulaması: kumanda/build/outputs/apk/debug/kumanda-debug.apk
 ```
 JDK 17–21 ve Android SDK (platform 37) gerekir; `local.properties` içine `sdk.dir=...`.
 

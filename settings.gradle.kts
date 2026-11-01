@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "kokpit"
 include(":app")
+include(":kumanda")

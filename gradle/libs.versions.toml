@@ -16,6 +16,7 @@ androidxTestCore = "1.7.0"
 profileinstaller = "1.4.1"
 zxing = "3.5.3"
 dadb = "1.2.10"
+playCodeScanner = "16.1.0"
 
 [libraries]
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -47,6 +48,8 @@ androidx-test-core = { group = "androidx.test", name = "core", version.ref = "an
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 
 dadb = { group = "dev.mobile", name = "dadb", version.ref = "dadb" }
+
+play-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "playCodeScanner" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

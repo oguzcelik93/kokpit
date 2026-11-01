@@ -492,4 +492,7 @@
     <string name="panel_pin_reset">Panel PIN\'ini sıfırla</string>
     <string name="panel_pin_reset_help">Unuttunuz mu? Sonraki bağlantıda yenisi belirlenir</string>
     <string name="panel_pin_reset_confirm">PIN unutulur; bağlanan ilk telefon yenisini belirler. Yalnızca burada, ünitede yapılabilir.</string>
+    <string name="panel_scan_help_kumanda">Ya da Kokpit Kumanda uygulamasıyla okutun: Wi-Fi gerekmez, Bluetooth ile bağlanır.</string>
+    <string name="panel_bt_only">Ünite bir Wi-Fi ağında değil: bu QR yalnızca Kokpit Kumanda uygulamasıyla (Bluetooth) açılır. Telefonun tarayıcısı için \"Kokpit\'in kendi ağı\"na dokunun.</string>
+    <string name="panel_bt_off">Kokpit Kumanda bu sefer bağlanamaz: %1$s</string>
 </resources>

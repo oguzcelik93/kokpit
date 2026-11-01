@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kokpit Kumanda</string>
+    <string name="steps">1. Ünitede Ayarlar → \"Telefondan yönet\"e basın.\n2. Aşağıdaki düğmeye basıp ünitedeki QR\'ı okutun.\n3. PIN\'inizi girin. Panel açılır.</string>
+    <string name="scan">QR\'ı okut</string>
+    <string name="note">Wi-Fi gerekmez: telefon üniteye Bluetooth ile bağlanır. Telefonun üniteyle Bluetooth\'ta eşleşmiş olması yeterli. Panel ünitede 15 dakika kullanılmazsa ya da 1 saat dolunca kapanır; tekrar açmak için QR\'ı yeniden okutun.</string>
+    <string name="connecting">Üniteye bağlanılıyor…</string>
+    <string name="connected">%1$s ile bağlandı</string>
+    <string name="closed">Panelden çıkıldı. Tekrar açmak için QR\'ı okutun.</string>
+    <string name="not_kokpit">Bu bir Kokpit paneli QR\'ı değil. Ünitede \"Telefondan yönet\" ekranındaki QR\'ı okutun.</string>
+    <string name="unit_no_bt">Ünite bu sefer Bluetooth paneli açamadı (ünitenin Bluetooth\'u kapalı olabilir). Ünitedeki ekranda nedeni yazıyor.</string>
+    <string name="no_bt">Bu telefonda Bluetooth yok.</string>
+    <string name="bt_off">Telefonun Bluetooth\'unu açın, sonra QR\'ı tekrar okutun.</string>
+    <string name="need_permission">Bluetooth izni olmadan üniteye bağlanılamaz. İzin verip QR\'ı tekrar okutun.</string>
+    <string name="scanner_failed">QR okuyucu açılamadı. Google Play Hizmetleri güncel mi, internet var mı? (Okuyucu ilk kullanımda bir kez iner.)</string>
+</resources>

@@ -81,6 +81,13 @@ textarea{width:100%;height:50vh;background:#0f130c;color:var(--fg);border:1px so
 <script>
 var T='$token';
 var S='',pinMode='',firstPin='';
+// Kokpit Kumanda serves this page from the phone itself and carries it over Bluetooth, which
+// is slow: there, big photos are shrunk on the phone first (the unit's screen is far smaller).
+var BT=location.hostname==='127.0.0.1';
+function shrink(f){if(!BT||f.size<1500000)return Promise.resolve(f);return new Promise(function(ok){var url=URL.createObjectURL(f),img=new Image();
+ img.onload=function(){var k=Math.min(1,1920/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);
+ c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(function(b){ok(b&&b.size<f.size?b:f)},'image/jpeg',0.88)};
+ img.onerror=function(){URL.revokeObjectURL(url);ok(f)};img.src=url})}
 function u(p){return p+(p.indexOf('?')<0?'?':'&')+'t='+T+(S?'&s='+S:'')}
 function needPin(){S='';q('nav').style.display='none';[].forEach.call(document.querySelectorAll('.tab'),function(t){t.classList.toggle('on',t.id==='pin')});
  fetch(u('/api/pin')).then(function(r){return r.json()}).then(function(p){pinMode=p.set?'login':'setup';firstPin='';q('pinv').value='';
@@ -108,8 +115,8 @@ function load(){get('/api/state').then(function(r){return r.json()}).then(functi
   x.onclick=function(){if(b[1]==='delete'&&!confirm('Bu fotoğraf silinsin mi?'))return;post('/api/photo/'+id+'/'+b[1]).then(function(){setTimeout(load,400)}).catch(function(e){msg(e.message)})};row.appendChild(x)});
   c.appendChild(row);g.appendChild(c)})}).catch(function(e){msg(e.message)})}
 q('up').onchange=function(e){var files=[].slice.call(e.target.files),st=q('upst'),i=0;(function next(){if(i>=files.length){st.textContent=files.length+' fotoğraf yüklendi ✓';e.target.value='';load();return}
- st.textContent='Yükleniyor '+(i+1)+'/'+files.length+'…';post('/api/photo',files[i]).then(function(){i++;next()}).catch(function(err){st.textContent='Olmadı: '+err.message;i++;next()})})()};
-q('vid').onchange=function(e){var f=e.target.files[0];if(!f)return;q('vst').textContent='Yükleniyor…';post('/api/intro',f).then(function(){q('vst').textContent='Video eklendi ✓ (Seçili video modunda seçebilirsiniz)'}).catch(function(err){q('vst').textContent='Olmadı: '+err.message});e.target.value=''};
+ st.textContent='Yükleniyor '+(i+1)+'/'+files.length+'…';shrink(files[i]).then(function(b){return post('/api/photo',b)}).then(function(){i++;next()}).catch(function(err){st.textContent='Olmadı: '+err.message;i++;next()})})()};
+q('vid').onchange=function(e){var f=e.target.files[0];if(!f)return;q('vst').textContent=BT?'Bluetooth ile yükleniyor, birkaç dakika sürebilir…':'Yükleniyor…';post('/api/intro',f).then(function(){q('vst').textContent='Video eklendi ✓ (Seçili video modunda seçebilirsiniz)'}).catch(function(err){q('vst').textContent='Olmadı: '+err.message});e.target.value=''};
 function setS(k,v){var o={};o[k]=v;post('/api/settings',JSON.stringify(o),'application/json').then(function(){msg('Kaydedildi ✓')}).catch(function(e){msg(e.message)})}
 [].forEach.call(document.querySelectorAll('[data-s]'),function(x){x.onchange=function(){var v=x.type==='checkbox'?x.checked:(x.type==='range'||x.dataset.s==='idleMinutes'?Number(x.value):x.value);setS(x.dataset.s,v)}});
 function loadSettings(){get('/api/settings').then(function(r){return r.json()}).then(function(s){[].forEach.call(document.querySelectorAll('[data-s]'),function(x){var v=s[x.dataset.s];if(x.type==='checkbox')x.checked=!!v;else x.value=v})}).catch(function(e){msg(e.message)})}
