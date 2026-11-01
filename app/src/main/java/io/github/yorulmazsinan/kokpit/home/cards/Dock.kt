@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Radio
@@ -93,4 +94,5 @@ fun DockSlot.icon(): ImageVector = when (this) {
     DockSlot.MAPS -> Icons.Outlined.Map
     DockSlot.APPS -> Icons.Outlined.Apps
     DockSlot.ASSISTANT -> Icons.Outlined.Mic
+    DockSlot.BROWSER -> Icons.Outlined.Language
 }

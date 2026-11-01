@@ -105,12 +105,6 @@ class HomeScreenTest {
     }
 
     @Test
-    fun showsGpsSearchingWithoutFix() {
-        show(base.copy(trip = TripSnapshot(null, null, null, hasFix = false)))
-        compose.onNodeWithText(context.getString(R.string.gps_searching)).assertExists()
-    }
-
-    @Test
     fun showsNothingPlayingWhenIdle() {
         show(base)
         compose.onNodeWithText(context.getString(R.string.nothing_playing)).assertExists()
@@ -141,17 +135,28 @@ class HomeScreenTest {
     }
 
     @Test
-    fun speedCardShowsSmallAverageAboveGauge() {
-        show(base)
-        compose.onNodeWithTag("speed_value", useUnmergedTree = true).assertExists()
-        compose.onNodeWithTag("average_speed", useUnmergedTree = true).assertExists()
-        compose.onNodeWithText(context.getString(R.string.average_speed_short, 48), useUnmergedTree = true).assertExists()
+    fun windowCardOpensTheAppWhenOneIsSet() {
+        var opened = false
+        var settings = false
+        compose.setContent {
+            KokpitTheme {
+                HomeScreen(base, now, HomeActions(onWindowOpen = { opened = true }, onWindowSettings = { settings = true }),
+                    window = io.github.yorulmazsinan.kokpit.home.cards.WindowCardState(null, "Brave", null))
+            }
+        }
+        compose.onNodeWithText("Brave").assertExists()
+        compose.onNodeWithTag("window_card").performClick()
+        assertTrue(opened)
+        assertTrue(!settings)
     }
 
     @Test
-    fun noAverageBeforeItIsKnown() {
-        show(base.copy(trip = base.trip.copy(averageKmh = null)))
-        compose.onNodeWithTag("average_speed", useUnmergedTree = true).assertDoesNotExist()
+    fun emptyWindowCardOpensItsSettings() {
+        var settings = false
+        compose.setContent { KokpitTheme { HomeScreen(base, now, HomeActions(onWindowSettings = { settings = true })) } }
+        compose.onNodeWithText(context.getString(R.string.window_empty)).assertExists()
+        compose.onNodeWithTag("window_card").performClick()
+        assertTrue(settings)
     }
 
     @Test

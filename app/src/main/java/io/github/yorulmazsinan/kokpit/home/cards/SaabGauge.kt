@@ -133,11 +133,17 @@ fun SaabSpeedometer(speedKmh: Int?, modifier: Modifier = Modifier, dim: Boolean 
 }
 
 /**
- * Saab's Night Panel: everything goes dark except the speedometer, so nothing glows in
- * the driver's eyes on a dark road. Any tap brings the full cockpit back.
+ * Night Panel: everything goes dark except a dim clock, so nothing glows in the driver's eyes
+ * on a dark road. Any tap brings the full cockpit back.
  */
 @Composable
-fun NightPanel(trip: TripSnapshot, onExit: () -> Unit) {
+fun NightPanel(onExit: () -> Unit) {
+    val now by androidx.compose.runtime.produceState(io.github.yorulmazsinan.kokpit.time.TrueTime.time()) {
+        while (true) {
+            value = io.github.yorulmazsinan.kokpit.time.TrueTime.time()
+            kotlinx.coroutines.delay(15_000)
+        }
+    }
     Box(
         Modifier
             .fillMaxSize()
@@ -146,10 +152,10 @@ fun NightPanel(trip: TripSnapshot, onExit: () -> Unit) {
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onExit),
         contentAlignment = Alignment.Center,
     ) {
-        SaabSpeedometer(
-            if (trip.hasFix) trip.speedKmh else null,
-            Modifier.fillMaxHeight(0.78f).fillMaxWidth(0.5f),
-            dim = true,
+        Text(
+            now.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")),
+            style = TextStyle(fontFamily = KokpitFonts.condensed, fontSize = 120.sp, lineHeight = 120.sp),
+            color = SaabColors.GreenDim.copy(alpha = 0.7f),
         )
         Text(
             stringResource(R.string.night_panel),

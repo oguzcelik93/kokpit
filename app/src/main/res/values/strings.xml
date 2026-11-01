@@ -420,4 +420,25 @@
     <string name="bt_phone_connecting">Connecting to %1$s… (up to 15 s; the phone\'s Bluetooth must be on)</string>
     <string name="bt_phone_done">%1$s connected.</string>
     <string name="bt_phone_failed">%1$s did not connect. Is its Bluetooth on and nearby? If this keeps failing, the unit does not let apps switch phones; then pick the car from the phone\'s own Bluetooth menu.</string>
+    <string name="dock_browser">Browser</string>
+    <string name="window_title">Home screen card</string>
+    <string name="window_settings_help">Browser button and photo instead of the speedometer</string>
+    <string name="window_empty">Add a photo or pick a browser — tap</string>
+    <string name="window_app">App on the card</string>
+    <string name="window_app_help">Tap the card to open it full screen. Brave is used when installed; tap here for another browser or app.</string>
+    <string name="window_get_brave">Install Brave</string>
+    <string name="window_get_brave_help">Opens Brave in Play Store</string>
+    <string name="window_photo">Photo on the card</string>
+    <string name="window_from_phone">Send from phone (QR)</string>
+    <string name="window_from_phone_help">Scan the code with the phone that is the unit\'s hotspot, pick a photo. Works on iPhone and Android, no app needed.</string>
+    <string name="window_scan">Scan with the phone\'s camera</string>
+    <string name="window_received">Photo received ✓</string>
+    <string name="window_receiver_stopped">Sending closed (5 minutes passed). Tap again to reopen.</string>
+    <string name="window_no_network">The unit is not on a network. Connect it to the phone\'s hotspot first.</string>
+    <string name="window_from_storage">Choose from USB / downloads</string>
+    <string name="window_from_storage_help">Photos on a USB stick or SD card, or downloaded with the browser</string>
+    <string name="window_none_found">No photos found. Download one with the browser or put it on a USB stick.</string>
+    <string name="window_set">Photo set</string>
+    <string name="window_not_image">Not a photo Kokpit can read</string>
+    <string name="window_remove">Remove photo</string>
 </resources>

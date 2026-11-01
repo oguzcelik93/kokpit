@@ -16,6 +16,14 @@ object KnownPackages {
         DockSlot.RADIO to listOf("com.ts.MainUI/com.ts.main.radio.RadioMainActivity"),
         DockSlot.BLUETOOTH to listOf("com.ts.MainUI/com.ts.bt.BtMusicActivity"),
         DockSlot.PHONE to listOf("com.ts.MainUI/com.ts.bt.BtConnectActivity"),
+        // The window card: Brave first, as asked; then other full browsers.
+        DockSlot.BROWSER to listOf(
+            "com.brave.browser",
+            "org.mozilla.firefox",
+            "com.android.chrome",
+            "org.chromium.chrome",
+            "com.android.browser",
+        ),
         DockSlot.MAPS to listOf(
             "com.google.android.apps.maps",
             "ru.yandex.yandexnavi",

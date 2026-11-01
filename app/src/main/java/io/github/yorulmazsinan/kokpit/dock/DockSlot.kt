@@ -13,4 +13,7 @@ enum class DockSlot(@StringRes val label: Int, val inDock: Boolean = true) {
 
     /** The home screen's microphone button; phase 1 can point it at an app such as ChatGPT. */
     ASSISTANT(R.string.dock_assistant, inDock = false),
+
+    /** The home screen's window card: a browser (Brave first) or any app the driver picks. */
+    BROWSER(R.string.dock_browser, inDock = false),
 }

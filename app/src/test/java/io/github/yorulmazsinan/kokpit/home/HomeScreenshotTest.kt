@@ -1,6 +1,7 @@
 package io.github.yorulmazsinan.kokpit.home
 
 import android.graphics.Bitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -59,8 +60,20 @@ class HomeScreenshotTest {
         ),
     )
 
+    /** A stand-in photo: a dusk road gradient. */
+    private fun photo(): androidx.compose.ui.graphics.ImageBitmap {
+        val bmp = Bitmap.createBitmap(640, 360, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bmp)
+        val paint = android.graphics.Paint().apply {
+            shader = android.graphics.LinearGradient(0f, 0f, 0f, 360f, intArrayOf(0xFF1B2A4A.toInt(), 0xFFE07B39.toInt(), 0xFF202020.toInt()), null, android.graphics.Shader.TileMode.CLAMP)
+        }
+        canvas.drawRect(0f, 0f, 640f, 360f, paint)
+        return bmp.asImageBitmap()
+    }
+
     private fun capture(name: String, dark: Boolean = true, accent: ThemeAccent = ThemeAccent.GAUGE_GREEN) {
-        compose.setContent { KokpitTheme(dark = dark, accent = accent) { DesignScale { HomeScreen(state(dark), now, HomeActions(car = io.github.yorulmazsinan.kokpit.home.cards.CarShortcuts())) } } }
+        val window = if (accent == ThemeAccent.SAAB_93) io.github.yorulmazsinan.kokpit.home.cards.WindowCardState(photo(), "Brave", null) else null
+        compose.setContent { KokpitTheme(dark = dark, accent = accent) { DesignScale { HomeScreen(state(dark), now, HomeActions(car = io.github.yorulmazsinan.kokpit.home.cards.CarShortcuts()), window = window) } } }
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
         val out = File("build/screenshots/$name.png").apply { parentFile?.mkdirs() }
         out.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
@@ -99,7 +112,7 @@ class HomeScreenshotTest {
 
     @Test @Config(qualifiers = "tr-w1024dp-h600dp-land-mdpi")
     fun saabNightPanel() {
-        compose.setContent { KokpitTheme(accent = ThemeAccent.SAAB_93) { DesignScale { NightPanel(state(true).trip) {} } } }
+        compose.setContent { KokpitTheme(accent = ThemeAccent.SAAB_93) { DesignScale { NightPanel {} } } }
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
         val out = File("build/screenshots/saab-night-panel.png").apply { parentFile?.mkdirs() }
         out.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }

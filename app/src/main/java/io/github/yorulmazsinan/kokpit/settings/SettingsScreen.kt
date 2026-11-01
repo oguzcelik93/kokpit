@@ -64,6 +64,7 @@ fun SettingsScreen(
     onOpenFuel: () -> Unit = {},
     onOpenUpdate: () -> Unit = {},
     onOpenBtPhones: () -> Unit = {},
+    onOpenWindow: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -107,6 +108,7 @@ fun SettingsScreen(
             item { SectionHeader(stringResource(R.string.settings_car)) }
             item { ListRow(stringResource(R.string.places_title), stringResource(R.string.places_settings_help), onClick = onOpenPlaces) }
             item { ListRow(stringResource(R.string.bt_phones_title), stringResource(R.string.bt_phones_settings_help), onClick = onOpenBtPhones) }
+            item { ListRow(stringResource(R.string.window_title), stringResource(R.string.window_settings_help), onClick = onOpenWindow) }
             item { ListRow(stringResource(R.string.logbook_title), stringResource(R.string.logbook_settings_help), onClick = onOpenFuel) }
             item {
                 ToggleRow(stringResource(R.string.wake_to_kokpit), settings.wakeToKokpit, stringResource(R.string.wake_to_kokpit_help)) { on ->

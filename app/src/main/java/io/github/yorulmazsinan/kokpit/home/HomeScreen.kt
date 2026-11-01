@@ -15,13 +15,14 @@ import io.github.yorulmazsinan.kokpit.dock.DockSlot
 import io.github.yorulmazsinan.kokpit.home.cards.ClockCard
 import io.github.yorulmazsinan.kokpit.home.cards.Dock
 import io.github.yorulmazsinan.kokpit.home.cards.CompassCard
-import io.github.yorulmazsinan.kokpit.home.cards.SpeedCard
+import io.github.yorulmazsinan.kokpit.home.cards.WindowCard
+import io.github.yorulmazsinan.kokpit.home.cards.WindowCardState
 import io.github.yorulmazsinan.kokpit.home.cards.NowPlayingCard
 import io.github.yorulmazsinan.kokpit.ui.theme.Dimens
 import java.time.LocalDateTime
 
 @Composable
-fun HomeScreen(state: HomeUiState, now: LocalDateTime, actions: HomeActions, showDock: Boolean = true) {
+fun HomeScreen(state: HomeUiState, now: LocalDateTime, actions: HomeActions, showDock: Boolean = true, window: WindowCardState? = null) {
     Column(
         Modifier
             .fillMaxSize()
@@ -55,12 +56,10 @@ fun HomeScreen(state: HomeUiState, now: LocalDateTime, actions: HomeActions, sho
                     onNext = actions.onNext,
                     modifier = Modifier.weight(0.95f).fillMaxWidth(),
                 )
-                SpeedCard(
-                    trip = state.trip,
-                    permissionMissing = state.locationPermissionMissing,
-                    onRequestPermissions = actions.onRequestPermissions,
-                    onOpenMaps = actions.onOpenMaps,
-                    onNightPanel = actions.onNightPanel,
+                WindowCard(
+                    state = window,
+                    onOpen = actions.onWindowOpen,
+                    onSettings = actions.onWindowSettings,
                     modifier = Modifier.weight(1.45f).fillMaxWidth(),
                 )
                 CompassCard(state.trip, Modifier.weight(0.6f).fillMaxWidth(), onClick = actions.onOpenMaps, shortcuts = actions.car)

@@ -16,6 +16,7 @@ import io.github.yorulmazsinan.kokpit.player.UsbPlayer
 import io.github.yorulmazsinan.kokpit.connect.KokpitService
 import io.github.yorulmazsinan.kokpit.car.AutoBrightness
 import io.github.yorulmazsinan.kokpit.car.CarRepository
+import io.github.yorulmazsinan.kokpit.car.WallpaperStore
 import io.github.yorulmazsinan.kokpit.car.ResumePlayback
 import io.github.yorulmazsinan.kokpit.car.TripLog
 import io.github.yorulmazsinan.kokpit.update.Updater
@@ -107,6 +108,7 @@ class AppContainer(context: Context) {
     val updater = Updater(appContext, http, scope)
     val timeSync = TimeSync(appContext, http, scope)
     val btConnect = BtAutoConnect(appContext, scope)
+    val wallpaper = WallpaperStore(appContext, scope)
     val resume = ResumePlayback(appContext, nowPlaying, vendorModes, btMusic)
 
     /** False between ignition off and on; nothing is sampled while the unit sleeps. */

@@ -39,5 +39,7 @@ class HomeActions(
     /** Hidden recovery entry: long-press on the clock. */
     val onRecovery: () -> Unit = {},
     val onBrightness: () -> Unit = {},
+    val onWindowOpen: () -> Unit = {},
+    val onWindowSettings: () -> Unit = {},
     val car: io.github.yorulmazsinan.kokpit.home.cards.CarShortcuts? = null,
 )

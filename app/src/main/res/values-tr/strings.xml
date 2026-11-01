@@ -420,4 +420,25 @@
     <string name="bt_phone_connecting">%1$s bağlanıyor… (15 sn kadar; telefonun Bluetooth\'u açık olmalı)</string>
     <string name="bt_phone_done">%1$s bağlandı.</string>
     <string name="bt_phone_failed">%1$s bağlanmadı. Bluetooth\'u açık ve yakında mı? Hep böyle oluyorsa ünite uygulamaların telefon değiştirmesine izin vermiyor demektir; o zaman telefonun kendi Bluetooth menüsünden aracı seçin.</string>
+    <string name="dock_browser">Tarayıcı</string>
+    <string name="window_title">Ana ekran kartı</string>
+    <string name="window_settings_help">Hız göstergesi yerine tarayıcı düğmesi ve fotoğraf</string>
+    <string name="window_empty">Fotoğraf ekleyin ya da tarayıcı seçin — dokunun</string>
+    <string name="window_app">Karttaki uygulama</string>
+    <string name="window_app_help">Karta dokununca tam ekran açılır. Kuruluysa Brave kullanılır; başka tarayıcı ya da uygulama için buraya dokunun.</string>
+    <string name="window_get_brave">Brave\'i kur</string>
+    <string name="window_get_brave_help">Play Store\'da Brave\'i açar</string>
+    <string name="window_photo">Karttaki fotoğraf</string>
+    <string name="window_from_phone">Telefondan gönder (QR)</string>
+    <string name="window_from_phone_help">Kodu, ünitenin hotspot\'u olan telefonla okutun, bir fotoğraf seçin. iPhone ve Android\'de çalışır, uygulama gerekmez.</string>
+    <string name="window_scan">Telefonun kamerasıyla okutun</string>
+    <string name="window_received">Fotoğraf alındı ✓</string>
+    <string name="window_receiver_stopped">Gönderme kapandı (5 dakika doldu). Yeniden açmak için tekrar dokunun.</string>
+    <string name="window_no_network">Ünite bir ağa bağlı değil. Önce telefonun hotspot\'una bağlayın.</string>
+    <string name="window_from_storage">USB / indirilenlerden seç</string>
+    <string name="window_from_storage_help">USB bellek ya da SD karttaki, veya tarayıcıyla indirilen fotoğraflar</string>
+    <string name="window_none_found">Fotoğraf bulunamadı. Tarayıcıyla indirin ya da USB belleğe koyun.</string>
+    <string name="window_set">Fotoğraf ayarlandı</string>
+    <string name="window_not_image">Kokpit\'in okuyabildiği bir fotoğraf değil</string>
+    <string name="window_remove">Fotoğrafı kaldır</string>
 </resources>

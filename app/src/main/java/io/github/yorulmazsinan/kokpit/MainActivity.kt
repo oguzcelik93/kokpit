@@ -250,6 +250,7 @@ object Routes {
     const val PLACES = "places"
     const val UPDATE = "update"
     const val BT_PHONES = "bt-phones"
+    const val WINDOW = "window"
 }
 
 /** Dock slots with a Kokpit screen; those screens and home keep the dock on the bottom. */
@@ -345,7 +346,7 @@ private fun KokpitShell(container: AppContainer, homeState: HomeUiState) {
         },
     ) {
         DockedLayout(dock, banner) { KokpitNavHost(nav, container, homeState, ::openSlot, ::longPressSlot) }
-        if (nightPanel) NightPanel(homeState.trip) { container.nightPanel.value = false }
+        if (nightPanel) NightPanel { container.nightPanel.value = false }
         val brightness by container.brightnessPanel.collectAsStateWithLifecycle()
         if (brightness) BrightnessPanel(onDismiss = { container.brightnessPanel.value = false })
         val update by container.updater.state.collectAsStateWithLifecycle()
@@ -429,7 +430,11 @@ private fun KokpitNavHost(
                 onOpenParking = { nav.navigate(Routes.PARKING) { launchSingleTop = true } },
                 onOpenFuel = { nav.navigate(Routes.FUEL) { launchSingleTop = true } },
                 onOpenPlaces = { nav.navigate(Routes.PLACES) { launchSingleTop = true } },
+                onOpenWindow = { nav.navigate(Routes.WINDOW) { launchSingleTop = true } },
             )
+        }
+        composable(Routes.WINDOW) {
+            io.github.yorulmazsinan.kokpit.home.WindowScreen(container, onBack = { nav.popBackStack() }, onPickApp = { nav.navigate("picker/${it.name}") })
         }
         composable(Routes.BT_PHONES) { io.github.yorulmazsinan.kokpit.connect.BtPhonesScreen(container.btConnect, onBack = { nav.popBackStack() }) }
         composable(Routes.UPDATE) { UpdateScreen(container, onBack = { nav.popBackStack() }) }
@@ -483,6 +488,7 @@ private fun KokpitNavHost(
                 onOpenFuel = { nav.navigate(Routes.FUEL) },
                 onOpenUpdate = { nav.navigate(Routes.UPDATE) },
                 onOpenBtPhones = { nav.navigate(Routes.BT_PHONES) },
+                onOpenWindow = { nav.navigate(Routes.WINDOW) },
             )
         }
         composable(Routes.INTRO) { IntroSettingsScreen(container, onBack = { nav.popBackStack() }) }

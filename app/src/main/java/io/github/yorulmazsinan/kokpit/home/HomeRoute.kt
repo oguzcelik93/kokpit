@@ -3,6 +3,11 @@ package io.github.yorulmazsinan.kokpit.home
 import android.Manifest
 import android.content.Intent
 import android.os.Build
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.yorulmazsinan.kokpit.home.cards.WindowCardState
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -45,6 +50,7 @@ fun HomeRoute(
     onOpenParking: () -> Unit = {},
     onOpenFuel: () -> Unit = {},
     onOpenPlaces: () -> Unit = {},
+    onOpenWindow: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val now by produceState(io.github.yorulmazsinan.kokpit.time.TrueTime.dateTime()) {
@@ -74,6 +80,17 @@ fun HomeRoute(
         onPauseOrDispose { }
     }
 
+    val wallpaper by container.wallpaper.image.collectAsStateWithLifecycle()
+    val browserTarget = state.dock[DockSlot.BROWSER]
+    val browserIcon = remember(browserTarget) {
+        browserTarget?.let { t ->
+            runCatching {
+                context.packageManager.getApplicationIcon(io.github.yorulmazsinan.kokpit.dock.parseDockTarget(t).packageName)
+                    .toBitmap(96, 96).asImageBitmap()
+            }.getOrNull()
+        }
+    }
+
     fun launchSlot(slot: DockSlot): Boolean {
         val intent = state.dock[slot]?.let(container.installedApps::launchIntent) ?: return false
         return safeStart(context, intent)
@@ -100,6 +117,8 @@ fun HomeRoute(
             onGrantMediaAccess = { safeStart(context, Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
             onNightPanel = { container.nightPanel.value = true },
             onBrightness = { container.brightnessPanel.value = true },
+            onWindowOpen = { if (!launchSlot(DockSlot.BROWSER)) onOpenWindow() },
+            onWindowSettings = onOpenWindow,
             car = CarShortcuts(
                 onHome = { if (!navigateTo(context, container, PlaceKind.HOME, state.dock[DockSlot.MAPS])) onOpenPlaces() },
                 onWork = { if (!navigateTo(context, container, PlaceKind.WORK, state.dock[DockSlot.MAPS])) onOpenPlaces() },
@@ -112,5 +131,6 @@ fun HomeRoute(
         ),
         // The dock lives in the app shell so it stays put across Phone, Music and Radio.
         showDock = false,
+        window = WindowCardState(wallpaper, browserTarget?.let(container.installedApps::label), browserIcon),
     )
 }
