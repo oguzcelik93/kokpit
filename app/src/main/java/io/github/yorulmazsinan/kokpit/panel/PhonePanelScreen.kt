@@ -38,7 +38,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Opens the phone panel and shows its QR. With no hotspot around, Kokpit can host its own
+ * Opens the phone panel and shows its QR. The same QR works for the phone's browser (over
+ * Wi-Fi) and for Kokpit Kumanda (over Bluetooth); without Wi-Fi only Kumanda can use it. With no hotspot around, Kokpit can host its own
  * Wi-Fi: step 1 is a Wi-Fi QR (the phone camera joins it), step 2 the panel QR.
  */
 @Composable
@@ -61,7 +62,7 @@ fun PhonePanelScreen(panel: PhonePanel, hotspot: LocalHotspot, onBack: () -> Uni
             // The unit's own address appears a moment after the network starts.
             scope.launch {
                 repeat(10) {
-                    if (panel.open() != null) { noNetwork = false; return@launch }
+                    if (panel.open()?.wifi == true) { noNetwork = false; return@launch }
                     delay(500)
                 }
                 problem = "Ağ kuruldu ama adres alınamadı"
@@ -92,7 +93,12 @@ fun PhonePanelScreen(panel: PhonePanel, hotspot: LocalHotspot, onBack: () -> Uni
                         QrCode(s.url, Modifier.size(if (net != null) 220.dp else 260.dp))
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text(stringResource(R.string.panel_scan), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
-                            Text(stringResource(if (panel.pinSet) R.string.panel_scan_help_pin else R.string.panel_scan_help_newpin), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (s.wifi) Text(stringResource(if (panel.pinSet) R.string.panel_scan_help_pin else R.string.panel_scan_help_newpin), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                if (!s.bluetooth) stringResource(R.string.panel_bt_off, panel.bluetoothProblem.orEmpty())
+                                else stringResource(if (s.wifi) R.string.panel_scan_help_kumanda else R.string.panel_bt_only),
+                                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                             OutlinedButton(onClick = { panel.close() }, shape = KokpitButtonShape, modifier = Modifier.heightIn(min = Dimens.MinTouch)) {
                                 Text(stringResource(R.string.panel_close))
                             }

@@ -9,6 +9,8 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.io.InputStream
+import java.io.OutputStream
 
 /** The panel closes after this long without a request … */
 const val PANEL_IDLE_MS = 15 * 60_000L
@@ -148,3 +150,93 @@ fun panelSettingsJson(s: io.github.yorulmazsinan.kokpit.settings.KokpitSettings)
     put("autoCarPlayOnUsb", JsonPrimitive(s.autoCarPlayOnUsb))
     put("autoUpdate", JsonPrimitive(s.autoUpdate))
 }.toString()
+
+/**
+ * The panel's Bluetooth service (RFCOMM). Kokpit Kumanda on the phone uses the same id
+ * (kumanda/…/KokpitQr.kt); change both together.
+ */
+const val PANEL_BT_UUID = "6b6f6b70-6974-4b75-6d61-6e6461000001"
+
+/** Largest request head (request line + headers). */
+const val PANEL_MAX_HEAD = 8_192
+
+/**
+ * What the unit's QR carries. With Wi-Fi: the panel link for the phone's browser (Kokpit
+ * Kumanda reads the same QR and takes the Bluetooth path when `bt` is present). Without
+ * Wi-Fi: a `kokpit://` link only Kokpit Kumanda opens. `bt` = the unit's Bluetooth name,
+ * empty when unknown, absent when the panel is not listening on Bluetooth.
+ */
+fun panelQr(ip: String?, port: Int?, token: String, bluetoothName: String?, bluetooth: Boolean): String? {
+    val bt = if (bluetooth) "&bt=" + java.net.URLEncoder.encode(bluetoothName.orEmpty(), "UTF-8") else ""
+    return when {
+        ip != null && port != null -> "http://$ip:$port/?t=$token$bt"
+        bluetooth -> "kokpit://panel?t=$token$bt"
+        else -> null
+    }
+}
+
+/** Reads up to and including the blank line after the headers; null if the stream ends or the head is too long. */
+fun readPanelHead(input: InputStream): String? {
+    val sb = StringBuilder()
+    while (sb.length < PANEL_MAX_HEAD) {
+        val c = input.read()
+        if (c < 0) return null
+        sb.append(c.toChar())
+        if (sb.endsWith("\r\n\r\n")) return sb.toString()
+    }
+    return null
+}
+
+/** Reads exactly [length] bytes, or null if the stream ends first. */
+fun readExactly(input: InputStream, length: Int): ByteArray? {
+    val bytes = ByteArray(length)
+    var read = 0
+    while (read < length) {
+        val n = input.read(bytes, read, length - read)
+        if (n < 0) return null
+        read += n
+    }
+    return bytes
+}
+
+/** One plain response. Every response carries Content-Length, so a kept-open Bluetooth link stays in step. */
+fun writePanelReply(out: OutputStream, code: Int, type: String, body: ByteArray) {
+    val reason = mapOf(200 to "OK", 400 to "Bad Request", 401 to "Unauthorized", 403 to "Forbidden", 404 to "Not Found", 411 to "Length Required", 413 to "Payload Too Large")[code] ?: "Error"
+    out.write("HTTP/1.1 $code $reason\r\nContent-Type: $type\r\nContent-Length: ${body.size}\r\nConnection: close\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\n".toByteArray())
+    out.write(body)
+    out.flush()
+}
+
+/**
+ * Reads one request from [input] and hands it, with its whole body, to [handler]. Used by
+ * both transports (Wi-Fi: one request per connection; Bluetooth: one after another on the
+ * same link). A body is read only for a request that carries the panel's [tokenOk] token,
+ * and never beyond [PANEL_MAX_BODY]. Returns false when the link must be closed (stream
+ * ended, malformed or refused request).
+ */
+fun serveOnePanelRequest(
+    input: InputStream,
+    out: OutputStream,
+    tokenOk: (PanelRequest) -> Boolean,
+    handler: (PanelRequest, ByteArray, OutputStream) -> Unit,
+): Boolean {
+    val head = readPanelHead(input) ?: return false
+    val req = parsePanelRequest(head) ?: return false
+    if (req.headers.containsKey("transfer-encoding")) {
+        writePanelReply(out, 411, "text/plain", "length required".toByteArray())
+        return false
+    }
+    val lengthText = req.headers["content-length"]
+    val length = if (lengthText == null) 0L else lengthText.toLongOrNull()?.takeIf { it >= 0 } ?: return false
+    if (length > PANEL_MAX_BODY) {
+        writePanelReply(out, 413, "text/plain; charset=utf-8", "Çok büyük".toByteArray())
+        return false
+    }
+    if (length > 0 && !tokenOk(req)) {
+        writePanelReply(out, 403, "text/plain", "forbidden".toByteArray())
+        return false
+    }
+    val body = if (length == 0L) ByteArray(0) else readExactly(input, length.toInt()) ?: return false
+    handler(req, body, out)
+    return true
+}

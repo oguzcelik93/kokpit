@@ -3,6 +3,8 @@ name: Sürüm yayınla
 # Yalnızca depo sahibinin gönderdiği "v*" etiketiyle çalışır (ör. v0.8.0).
 # APK, GitHub'ın gizli kasasındaki anahtarla imzalanır ve Releases'e konur.
 # Kokpit ünitede releases/latest/download/version.json adresini kontrol eder.
+# Aynı sürüme telefon uygulaması Kokpit Kumanda da (aynı anahtarla imzalı) eklenir;
+# version.json yalnızca ünitedeki Kokpit'i anlatır.
 on:
   push:
     tags: ["v*"]
@@ -59,7 +61,7 @@ jobs:
           KOKPIT_KEYSTORE_B64: ${{ secrets.KOKPIT_KEYSTORE_B64 }}
           KOKPIT_KEYSTORE_PASSWORD: ${{ secrets.KOKPIT_KEYSTORE_PASSWORD }}
           KOKPIT_KEY_ALIAS: kokpit
-        run: ./gradlew :app:testDebugUnitTest :app:assembleRelease
+        run: ./gradlew :app:testDebugUnitTest :app:assembleRelease :kumanda:testDebugUnitTest :kumanda:assembleRelease
 
       - name: version.json ve yayın
         env:
@@ -76,6 +78,13 @@ jobs:
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
           "$APKSIGNER" verify --print-certs "$APK" | tee signer.txt
           if grep -q "CN=Android Debug" signer.txt; then echo "::error::Debug anahtarıyla imzalanmış"; exit 1; fi
+          KNAME=$(grep -oP 'versionName = "\K[^"]+' kumanda/build.gradle.kts)
+          KAPK="kokpit-kumanda-$KNAME.apk"
+          cp kumanda/build/outputs/apk/release/kumanda-release.apk "$KAPK"
+          "$APKSIGNER" verify --print-certs "$KAPK" | tee kumanda-signer.txt
+          if grep -q "CN=Android Debug" kumanda-signer.txt; then echo "::error::Kumanda debug anahtarıyla imzalanmış"; exit 1; fi
+          # İki uygulama aynı anahtarla imzalanmış olmalı.
+          if [ "$(grep 'SHA-256' signer.txt)" != "$(grep 'SHA-256' kumanda-signer.txt)" ]; then echo "::error::Kumanda farklı anahtarla imzalanmış"; exit 1; fi
           SHA=$(sha256sum "$APK" | cut -d' ' -f1)
           SIZE=$(stat -c %s "$APK")
           URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_NAME/$APK"
@@ -88,4 +97,4 @@ jobs:
           PY
           NOTES=$(python3 -c "import json;print(json.load(open('version.json'))['notes'] or 'Kokpit $NAME')")
           # Elle çalıştırmada etiket burada, bu commit üzerinde oluşturulur.
-          gh release create "$TAG_NAME" "$APK" version.json --title "Kokpit $NAME" --notes "$NOTES" --target "$GITHUB_SHA"
+          gh release create "$TAG_NAME" "$APK" "$KAPK" version.json --title "Kokpit $NAME" --notes "$NOTES" --target "$GITHUB_SHA"

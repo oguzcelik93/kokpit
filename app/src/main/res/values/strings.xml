@@ -492,4 +492,7 @@
     <string name="panel_pin_reset">Reset panel PIN</string>
     <string name="panel_pin_reset_help">Forgot it? The next connection sets a new one</string>
     <string name="panel_pin_reset_confirm">The PIN is forgotten; the next phone that connects sets a new one. Only possible here, on the unit.</string>
+    <string name="panel_scan_help_kumanda">Or scan it with the Kokpit Kumanda app: no Wi-Fi needed, it connects over Bluetooth.</string>
+    <string name="panel_bt_only">The unit is on no Wi-Fi: this QR opens only in the Kokpit Kumanda app (Bluetooth). For the phone\'s browser, tap \"Kokpit\'s own Wi-Fi\".</string>
+    <string name="panel_bt_off">Kokpit Kumanda can\'t connect this time: %1$s</string>
 </resources>
