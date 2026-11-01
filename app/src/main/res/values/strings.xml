@@ -449,4 +449,6 @@
     <string name="window_remove_help">Deletes the selected photo from the album</string>
     <string name="clock_source_estimate">estimate — waiting for GPS, internet or CarPlay</string>
     <string name="clock_estimate_note">≈ estimated time · waiting for GPS / internet / CarPlay</string>
+    <string name="diagnostics_to_phone">Send report to phone (QR)</string>
+    <string name="diagnostics_to_phone_help">Scan with the phone on the unit\'s hotspot. The report opens there with Copy and Download buttons; paste it into the chat. The page closes after 10 minutes or when you leave this screen.</string>
 </resources>

@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -75,7 +76,27 @@ fun DiagnosticsScreen(onBack: () -> Unit) {
             show(result?.let { (dir, n) -> context.getString(R.string.vendor_export_done, n, dir.absolutePath) } ?: context.getString(R.string.vendor_export_failed))
         }
     }
+    var shareLink by remember { mutableStateOf<String?>(null) }
+    var shareServer by remember { mutableStateOf<ReportServer?>(null) }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { shareServer?.stop() } }
     ScreenScaffold(stringResource(R.string.diagnostics_title), onBack) {
+        Button(
+            shape = KokpitButtonShape,
+            onClick = {
+                shareServer?.stop()
+                val server = ReportServer(text)
+                shareServer = server
+                shareLink = server.start(onStopped = { scope.launch { shareLink = null } })
+                if (shareLink == null) show(context.getString(R.string.window_no_network))
+            },
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp).heightIn(min = Dimens.MinTouch),
+        ) { Text(stringResource(R.string.diagnostics_to_phone)) }
+        shareLink?.let { url ->
+            Row(Modifier.padding(horizontal = 20.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                io.github.yorulmazsinan.kokpit.car.QrCode(url, Modifier.size(200.dp))
+                Text(stringResource(R.string.diagnostics_to_phone_help), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground)
+            }
+        }
         lastResult?.let {
             Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
         }

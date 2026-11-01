@@ -449,4 +449,6 @@
     <string name="window_remove_help">Seçili fotoğrafı albümden siler</string>
     <string name="clock_source_estimate">tahmini — GPS, internet ya da CarPlay bekleniyor</string>
     <string name="clock_estimate_note">≈ tahmini saat · GPS / internet / CarPlay bekleniyor</string>
+    <string name="diagnostics_to_phone">Raporu telefona gönder (QR)</string>
+    <string name="diagnostics_to_phone_help">Ünitenin hotspot\'undaki telefonla okutun. Rapor telefonda Kopyala ve İndir düğmeleriyle açılır; sohbete yapıştırın. Sayfa 10 dakika sonra ya da bu ekrandan çıkınca kapanır.</string>
 </resources>
