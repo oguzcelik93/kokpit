@@ -19,6 +19,8 @@ import io.github.yorulmazsinan.kokpit.car.CarRepository
 import io.github.yorulmazsinan.kokpit.car.ResumePlayback
 import io.github.yorulmazsinan.kokpit.car.TripLog
 import io.github.yorulmazsinan.kokpit.update.Updater
+import io.github.yorulmazsinan.kokpit.time.TimeSync
+import io.github.yorulmazsinan.kokpit.connect.BtAutoConnect
 import io.github.yorulmazsinan.kokpit.storage.removableRoots
 import kotlinx.coroutines.delay
 import io.github.yorulmazsinan.kokpit.connect.UsbAttachActivity
@@ -60,6 +62,9 @@ private val Context.weatherStore by preferencesDataStore("weather")
 private val Context.dockStore by preferencesDataStore("dock")
 private val Context.settingsStore by preferencesDataStore("settings")
 
+/** Work that waits until the welcome clip and the first frame are on screen. */
+private const val DEFERRED_START_MS = 6_000L
+
 /** Hand-wired holder for the app's long-lived repositories. */
 class AppContainer(context: Context) {
     val appContext: Context = context.applicationContext
@@ -100,6 +105,8 @@ class AppContainer(context: Context) {
     val car = CarRepository(appContext)
     val trips = TripLog(appContext)
     val updater = Updater(appContext, http, scope)
+    val timeSync = TimeSync(appContext, http, scope)
+    val btConnect = BtAutoConnect(appContext, scope)
     val resume = ResumePlayback(appContext, nowPlaying, vendorModes, btMusic)
 
     /** False between ignition off and on; nothing is sampled while the unit sleeps. */
@@ -133,10 +140,8 @@ class AppContainer(context: Context) {
             settings.settings.map { it.autoCarPlayOnUsb }.distinctUntilChanged().collect(::setUsbReceiverEnabled)
         }
         drive.start()
+        timeSync.start()
         autoBrightness.start(scope)
-        updater.startAuto { settings.settings.value.autoUpdate }
-        // A stick left in since boot: look for a newer APK on it too.
-        scope.launch(Dispatchers.IO) { runCatching { updater.checkUsb(removableRoots(appContext)) } }
         // The process may start mid-drive (update, crash): open a trip from here.
         trips.begin(drive.distanceMeters())
         scope.launch(Dispatchers.IO) {
@@ -147,15 +152,25 @@ class AppContainer(context: Context) {
                 runCatching { resume.sample() }
             }
         }
-        weather.start(scope)
-        calendar.start()
-        calls.refresh()
-        headUnit.start()
-        callMonitor.start()
-        nowPlaying.refreshAccess()
+        // Everything the first seconds don't need waits, so the welcome clip and the first
+        // frame get the slow CPU to themselves.
+        scope.launch {
+            delay(DEFERRED_START_MS)
+            weather.start(scope)
+            calendar.start()
+            calls.refresh()
+            headUnit.start()
+            callMonitor.start()
+            nowPlaying.refreshAccess()
+            btConnect.start()
+            updater.startAuto { settings.settings.value.autoUpdate }
+            // A stick left in since boot: look for a newer APK on it too.
+            launch(Dispatchers.IO) { runCatching { updater.checkUsb(removableRoots(appContext)) } }
+        }
         val connectivity = appContext.getSystemService(ConnectivityManager::class.java)
         connectivity.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
+                timeSync.syncFromInternet()
                 scope.launch { weather.refresh() }
             }
         })

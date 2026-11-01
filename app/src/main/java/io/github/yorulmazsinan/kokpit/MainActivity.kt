@@ -65,6 +65,7 @@ import io.github.yorulmazsinan.kokpit.car.LogbookScreen
 import io.github.yorulmazsinan.kokpit.update.UpdatePill
 import io.github.yorulmazsinan.kokpit.update.InfoPill
 import io.github.yorulmazsinan.kokpit.system.SpeedUp
+import io.github.yorulmazsinan.kokpit.intro.IntroGate
 import io.github.yorulmazsinan.kokpit.system.HomeGuard
 import io.github.yorulmazsinan.kokpit.connect.PowerEventLog
 import io.github.yorulmazsinan.kokpit.update.UpdateScreen
@@ -104,6 +105,36 @@ class MainActivity : ComponentActivity() {
             startSafeMode(intent)
             return
         }
+        // First start in this process: the welcome clip comes first, and the home screen is
+        // only drawn once it is over, so a slow unit spends all its power on the video.
+        if (savedInstanceState == null && !introCheckedThisProcess) {
+            introCheckedThisProcess = true
+            if (startIntroIfWanted(container)) {
+                contentPending = true
+                return
+            }
+        }
+        showContent(container)
+    }
+
+    private var contentPending = false
+
+    private fun startIntroIfWanted(container: AppContainer): Boolean {
+        if (IntroGate.recentlyPlayed()) return false
+        // Read from disk: right after a cold start the in-memory settings may not be loaded yet.
+        val intro = kotlinx.coroutines.runBlocking { container.settings.current().intro }
+        val videos = io.github.yorulmazsinan.kokpit.intro.allIntroVideos(container.introLibrary)
+        val season = io.github.yorulmazsinan.kokpit.intro.seasonFor(
+            io.github.yorulmazsinan.kokpit.time.TrueTime.date(),
+            io.github.yorulmazsinan.kokpit.intro.currentTemperature(container.weather.state.value),
+        )
+        val video = io.github.yorulmazsinan.kokpit.intro.pickIntroVideo(intro, videos, null, kotlin.random.Random.Default, season) ?: return false
+        if (!io.github.yorulmazsinan.kokpit.connect.introAllowedAt(container.drive.state.value.speedKmh)) return false
+        IntroGate.markStarted()
+        return safeStart(this, io.github.yorulmazsinan.kokpit.intro.IntroActivity.intent(this, video.id, intro.withSound))
+    }
+
+    private fun showContent(container: AppContainer) {
         setContent {
             val home: HomeViewModel = viewModel { HomeViewModel(container) }
             val state by home.state.collectAsStateWithLifecycle()
@@ -133,6 +164,10 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         isResumed = true
+        if (contentPending) {
+            contentPending = false
+            showContent((application as KokpitApp).container)
+        }
         // Half a minute on screen without crashing ends any crash-loop count.
         window.decorView.postDelayed(markStable, 30_000)
     }
@@ -178,6 +213,9 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        /** The welcome clip is offered once per process, at Kokpit's first start. */
+        private var introCheckedThisProcess = false
+
         /** Kokpit is on screen right now. */
         @Volatile var isResumed = false
             private set
@@ -211,6 +249,7 @@ object Routes {
     const val FUEL = "fuel"
     const val PLACES = "places"
     const val UPDATE = "update"
+    const val BT_PHONES = "bt-phones"
 }
 
 /** Dock slots with a Kokpit screen; those screens and home keep the dock on the bottom. */
@@ -392,6 +431,7 @@ private fun KokpitNavHost(
                 onOpenPlaces = { nav.navigate(Routes.PLACES) { launchSingleTop = true } },
             )
         }
+        composable(Routes.BT_PHONES) { io.github.yorulmazsinan.kokpit.connect.BtPhonesScreen(container.btConnect, onBack = { nav.popBackStack() }) }
         composable(Routes.UPDATE) { UpdateScreen(container, onBack = { nav.popBackStack() }) }
         composable(Routes.PARKING) { ParkingScreen(container.car, container.drive::lastPosition, onBack = { nav.popBackStack() }) }
         composable(Routes.FUEL) { LogbookScreen(container.car, container.trips, onBack = { nav.popBackStack() }) }
@@ -442,6 +482,7 @@ private fun KokpitNavHost(
                 onOpenPlaces = { nav.navigate(Routes.PLACES) },
                 onOpenFuel = { nav.navigate(Routes.FUEL) },
                 onOpenUpdate = { nav.navigate(Routes.UPDATE) },
+                onOpenBtPhones = { nav.navigate(Routes.BT_PHONES) },
             )
         }
         composable(Routes.INTRO) { IntroSettingsScreen(container, onBack = { nav.popBackStack() }) }

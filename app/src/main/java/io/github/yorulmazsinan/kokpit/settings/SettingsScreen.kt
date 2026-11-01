@@ -63,6 +63,7 @@ fun SettingsScreen(
     onOpenPlaces: () -> Unit = {},
     onOpenFuel: () -> Unit = {},
     onOpenUpdate: () -> Unit = {},
+    onOpenBtPhones: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -85,10 +86,27 @@ fun SettingsScreen(
                 SettingsPicker(accents, settings.accent, { accent -> update { it.copy(accent = accent) } }) { stringResource(it.label) }
             }
 
+            item { SectionHeader(stringResource(R.string.clock_section)) }
+            item {
+                val source = when (io.github.yorulmazsinan.kokpit.time.TrueTime.source) {
+                    io.github.yorulmazsinan.kokpit.time.TimeSource.GPS -> stringResource(R.string.clock_source_gps)
+                    io.github.yorulmazsinan.kokpit.time.TimeSource.INTERNET -> stringResource(R.string.clock_source_internet)
+                    io.github.yorulmazsinan.kokpit.time.TimeSource.SYSTEM -> stringResource(R.string.clock_source_system)
+                }
+                val shown = io.github.yorulmazsinan.kokpit.time.TrueTime.dateTime()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy HH:mm", java.util.Locale.getDefault()))
+                ListRow(shown, stringResource(R.string.clock_status, source, java.util.TimeZone.getDefault().id)) {
+                    container.timeSync.syncFromInternet()
+                    safeStart(context, Intent(android.provider.Settings.ACTION_DATE_SETTINGS))
+                }
+            }
+            item { HelpText(stringResource(R.string.clock_help)) }
+
             autoBrightnessSettings(container, settings, ::update)
 
             item { SectionHeader(stringResource(R.string.settings_car)) }
             item { ListRow(stringResource(R.string.places_title), stringResource(R.string.places_settings_help), onClick = onOpenPlaces) }
+            item { ListRow(stringResource(R.string.bt_phones_title), stringResource(R.string.bt_phones_settings_help), onClick = onOpenBtPhones) }
             item { ListRow(stringResource(R.string.logbook_title), stringResource(R.string.logbook_settings_help), onClick = onOpenFuel) }
             item {
                 ToggleRow(stringResource(R.string.wake_to_kokpit), settings.wakeToKokpit, stringResource(R.string.wake_to_kokpit_help)) { on ->

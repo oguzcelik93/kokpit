@@ -47,10 +47,10 @@ fun shouldIdle(enabled: Boolean, onHome: Boolean, idleMs: Long, limitMinutes: In
  */
 @Composable
 fun IdleScreen(temperatureC: Double?, onExit: () -> Unit, fixedNow: LocalDateTime? = null) {
-    val now by produceState(fixedNow ?: LocalDateTime.now()) {
+    val now by produceState(fixedNow ?: io.github.yorulmazsinan.kokpit.time.TrueTime.dateTime()) {
         if (fixedNow != null) return@produceState
         while (true) {
-            value = LocalDateTime.now()
+            value = io.github.yorulmazsinan.kokpit.time.TrueTime.dateTime()
             delay(1_000L * (60 - value.second).coerceAtLeast(1))
         }
     }

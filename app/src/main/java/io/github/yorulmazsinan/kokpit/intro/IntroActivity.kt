@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -21,6 +22,9 @@ import io.github.yorulmazsinan.kokpit.MainActivity
 /** Full-screen intro video; any touch, the end of the clip or any error returns to the home screen. */
 class IntroActivity : ComponentActivity() {
     private var player: ExoPlayer? = null
+    private lateinit var view: View
+    private var limitArmed = false
+    private val giveUp = Runnable { if (!isFinishing) finish() }
 
     @SuppressLint("ClickableViewAccessibility")
     @Suppress("DEPRECATION")
@@ -35,11 +39,28 @@ class IntroActivity : ComponentActivity() {
             finish()
             return
         }
+        IntroGate.markStarted()
+        val withSound = intent.getBooleanExtra(EXTRA_SOUND, false)
         val exo = ExoPlayer.Builder(this).build().also { player = it }
-        exo.volume = if (intent.getBooleanExtra(EXTRA_SOUND, false)) 1f else 0f
+        if (!withSound) {
+            // No audio track at all when muted: on these units the audio output can take
+            // seconds to open, and the video would wait for it on its first frame.
+            exo.trackSelectionParameters = exo.trackSelectionParameters.buildUpon()
+                .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
+                .build()
+        }
         exo.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_ENDED) finish()
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                // The play-time limit starts once the clip really plays, not while a slow unit prepares it.
+                if (isPlaying && !limitArmed) {
+                    limitArmed = true
+                    view.removeCallbacks(giveUp)
+                    view.postDelayed(giveUp, MAX_PLAY_MS)
+                }
             }
 
             override fun onPlayerError(error: PlaybackException) = finish()
@@ -52,7 +73,9 @@ class IntroActivity : ComponentActivity() {
             setOnTouchListener { _, _ -> finish(); true }
         }
         setContentView(view, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        view.postDelayed({ if (!isFinishing) finish() }, MAX_PLAY_MS)
+        this.view = view
+        // If it never starts (decoder trouble), don't hold the screen hostage.
+        view.postDelayed(giveUp, MAX_START_MS)
         exo.setMediaItem(MediaItem.fromUri(uri))
         exo.prepare()
         exo.play()
@@ -79,6 +102,7 @@ class IntroActivity : ComponentActivity() {
         private const val EXTRA_SOUND = "with_sound"
         private const val EXTRA_RETURN_HOME = "return_home"
         private const val MAX_PLAY_MS = 15_000L
+        private const val MAX_START_MS = 12_000L
 
         fun intent(context: Context, videoId: String, withSound: Boolean, returnHome: Boolean = false): Intent =
             Intent(context, IntroActivity::class.java)

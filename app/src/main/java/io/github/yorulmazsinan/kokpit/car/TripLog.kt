@@ -64,18 +64,18 @@ class TripLog(context: Context) {
     private var open: OpenTrip? = prefs.getString(KEY_OPEN, null)?.let { runCatching { json.decodeFromString(OpenTrip.serializer(), it) }.getOrNull() }
 
     /** A new drive starts; a drive left open (power cut, process restart) is closed at its last checkpoint. */
-    fun begin(meters: Double, nowMs: Long = System.currentTimeMillis()) {
+    fun begin(meters: Double, nowMs: Long = io.github.yorulmazsinan.kokpit.time.TrueTime.nowMs()) {
         open?.let { record(closeTrip(it, it.lastMs, it.lastMeters)) }
         setOpen(OpenTrip(nowMs, meters, nowMs, meters))
     }
 
-    fun checkpoint(meters: Double, nowMs: Long = System.currentTimeMillis()) {
+    fun checkpoint(meters: Double, nowMs: Long = io.github.yorulmazsinan.kokpit.time.TrueTime.nowMs()) {
         val o = open ?: return
         setOpen(o.copy(lastMs = nowMs, lastMeters = meters), commit = false)
     }
 
     /** Ignition off: returns the finished trip, if it was long enough to log. */
-    fun end(meters: Double, nowMs: Long = System.currentTimeMillis()): TripRecord? {
+    fun end(meters: Double, nowMs: Long = io.github.yorulmazsinan.kokpit.time.TrueTime.nowMs()): TripRecord? {
         val o = open ?: return null
         val trip = closeTrip(o, nowMs, meters)
         record(trip)

@@ -387,7 +387,7 @@
     <string name="elevated_checking">Checking…</string>
     <string name="elevated_unavailable">Not available on this unit right now: \"USB debugging\" is off or the unit doesn\'t offer it. The steps above work without it.</string>
     <string name="elevated_speedup">⚡ Speed up in one tap</string>
-    <string name="elevated_speedup_help">Switches off all unnecessary apps, sets animations to 0.5×, keeps Kokpit awake. Recorded, fully reversible.</string>
+    <string name="elevated_speedup_help">Switches off all unnecessary apps, sets animations to 0.5×, compiles Kokpit ahead of time (faster start), keeps Kokpit awake. Recorded, fully reversible.</string>
     <string name="elevated_wait">Working… if Android asks \"Allow USB debugging?\", tick \"Always allow\" and confirm.</string>
     <string name="elevated_failed">Did not work: %1$s</string>
     <string name="elevated_done">Done: %1$d apps switched off (%2$d could not be).</string>
@@ -405,4 +405,19 @@
     <string name="keep_home_help">If the unit pushes its own home screen to the front (reversing camera, start-up), Kokpit comes back. Radio, maps and other apps you open are left alone.</string>
     <string name="keep_home_permission">Allow \"Usage access\" for Kokpit</string>
     <string name="keep_home_permission_help">Needed to see that the unit\'s own home screen is in front. Tap → Kokpit → Allow.</string>
+    <string name="clock_section">Clock</string>
+    <string name="clock_source_gps">set from GPS satellites</string>
+    <string name="clock_source_internet">set from the internet</string>
+    <string name="clock_source_system">unit\'s own clock (not yet checked)</string>
+    <string name="clock_status">%1$s · time zone %2$s · tap for Android\'s date settings</string>
+    <string name="clock_help">This unit has no clock battery and starts on a wrong date. Kokpit corrects its clock from GPS (under open sky) or, with the hotspot on, from the internet. If the hour is off by whole hours, set the time zone (e.g. Europe/Berlin or Europe/Istanbul) in Android\'s date settings and turn on \"Automatic date &amp; time\".</string>
+    <string name="bt_phones_title">Bluetooth phones</string>
+    <string name="bt_phones_settings_help">Switch phone; automatic switch at ignition-on</string>
+    <string name="bt_phones_help">Tap a phone to connect it (the current one is let go). At ignition-on, if no phone connects within 10 seconds, Kokpit tries the paired phones in turn, most recently used first.</string>
+    <string name="bt_phones_none">No paired phones visible to Android. On some units Bluetooth lives in a separate module that only the unit\'s own Phone app can control.</string>
+    <string name="bt_phone_connected">Connected</string>
+    <string name="bt_phone_tap">Tap to connect</string>
+    <string name="bt_phone_connecting">Connecting to %1$s… (up to 15 s; the phone\'s Bluetooth must be on)</string>
+    <string name="bt_phone_done">%1$s connected.</string>
+    <string name="bt_phone_failed">%1$s did not connect. Is its Bluetooth on and nearby? If this keeps failing, the unit does not let apps switch phones; then pick the car from the phone\'s own Bluetooth menu.</string>
 </resources>

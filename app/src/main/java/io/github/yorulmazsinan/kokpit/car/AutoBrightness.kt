@@ -53,7 +53,7 @@ class AutoBrightness(
             is WeatherState.Stale -> state.weather
             is WeatherState.NoData -> null
         }
-        val phase = dayPhase(LocalTime.now(), w?.sunriseLocal, w?.sunsetLocal)
+        val phase = dayPhase(io.github.yorulmazsinan.kokpit.time.TrueTime.time(), w?.sunriseLocal, w?.sunsetLocal)
         if (phase == applied) return
         applied = phase
         if (s.autoBrightness && Brightness.canWrite(context)) {

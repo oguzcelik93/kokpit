@@ -47,14 +47,15 @@ fun HomeRoute(
     onOpenPlaces: () -> Unit = {},
 ) {
     val context = LocalContext.current
-    val now by produceState(LocalDateTime.now()) {
+    val now by produceState(io.github.yorulmazsinan.kokpit.time.TrueTime.dateTime()) {
         while (true) {
-            value = LocalDateTime.now()
-            delay(60_000L - (System.currentTimeMillis() % 60_000L))
+            value = io.github.yorulmazsinan.kokpit.time.TrueTime.dateTime()
+            delay(60_000L - (io.github.yorulmazsinan.kokpit.time.TrueTime.nowMs() % 60_000L))
         }
     }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         container.drive.refreshPermission()
+        container.timeSync.refreshPermission()
         container.calls.refresh()
         container.scope.launch {
             container.calendar.refresh()

@@ -387,7 +387,7 @@
     <string name="elevated_checking">Kontrol ediliyor…</string>
     <string name="elevated_unavailable">Bu ünitede şu an kullanılamıyor: \"USB hata ayıklama\" kapalı ya da ünite bunu sunmuyor. Yukarıdaki adımlar onsuz da çalışır.</string>
     <string name="elevated_speedup">⚡ Tek dokunuşla hızlandır</string>
-    <string name="elevated_speedup_help">Tüm gereksiz uygulamaları kapatır, animasyonları 0,5× yapar, Kokpit\'i uyutmaz. Kaydedilir, tamamen geri alınır.</string>
+    <string name="elevated_speedup_help">Tüm gereksiz uygulamaları kapatır, animasyonları 0,5× yapar, Kokpit\'i önceden derler (daha hızlı açılış), Kokpit\'i uyutmaz. Kaydedilir, tamamen geri alınır.</string>
     <string name="elevated_wait">Çalışıyor… Android \"USB hata ayıklamaya izin verilsin mi?\" diye sorarsa \"Her zaman izin ver\"i işaretleyip onaylayın.</string>
     <string name="elevated_failed">Olmadı: %1$s</string>
     <string name="elevated_done">Tamam: %1$d uygulama kapatıldı (%2$d kapatılamadı).</string>
@@ -405,4 +405,19 @@
     <string name="keep_home_help">Ünite kendi ana ekranını öne getirirse (geri vites kamerası, açılış) Kokpit geri gelir. Açtığınız radyo, harita ve diğer uygulamalara karışmaz.</string>
     <string name="keep_home_permission">Kokpit\'e \"Kullanım erişimi\" verin</string>
     <string name="keep_home_permission_help">Önde ünitenin kendi ana ekranı olduğunu görmek için gerekli. Dokunun → Kokpit → İzin ver.</string>
+    <string name="clock_section">Saat</string>
+    <string name="clock_source_gps">GPS uydularından ayarlandı</string>
+    <string name="clock_source_internet">internetten ayarlandı</string>
+    <string name="clock_source_system">ünitenin kendi saati (henüz doğrulanmadı)</string>
+    <string name="clock_status">%1$s · saat dilimi %2$s · Android tarih ayarları için dokunun</string>
+    <string name="clock_help">Bu ünitenin saat pili yok, açılışta yanlış tarihle başlıyor. Kokpit saatini GPS\'ten (açık havada) ya da hotspot açıksa internetten düzeltir. Saat tam saatler kadar farklıysa Android tarih ayarlarından saat dilimini seçin (ör. Europe/Berlin ya da Europe/Istanbul) ve \"Otomatik tarih ve saat\"i açın.</string>
+    <string name="bt_phones_title">Bluetooth telefonlar</string>
+    <string name="bt_phones_settings_help">Telefon değiştir; kontak açılınca otomatik geçiş</string>
+    <string name="bt_phones_help">Bağlamak için telefona dokunun (bağlı olan bırakılır). Kontak açılınca 10 saniye içinde hiçbir telefon bağlanmazsa Kokpit eşleşmiş telefonları sırayla dener; en son kullanılan önce.</string>
+    <string name="bt_phones_none">Android\'in gördüğü eşleşmiş telefon yok. Bazı ünitelerde Bluetooth ayrı bir modüldedir ve yalnızca ünitenin kendi Telefon uygulaması yönetebilir.</string>
+    <string name="bt_phone_connected">Bağlı</string>
+    <string name="bt_phone_tap">Bağlamak için dokunun</string>
+    <string name="bt_phone_connecting">%1$s bağlanıyor… (15 sn kadar; telefonun Bluetooth\'u açık olmalı)</string>
+    <string name="bt_phone_done">%1$s bağlandı.</string>
+    <string name="bt_phone_failed">%1$s bağlanmadı. Bluetooth\'u açık ve yakında mı? Hep böyle oluyorsa ünite uygulamaların telefon değiştirmesine izin vermiyor demektir; o zaman telefonun kendi Bluetooth menüsünden aracı seçin.</string>
 </resources>

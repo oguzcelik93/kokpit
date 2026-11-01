@@ -39,7 +39,7 @@ fun formatMinutes(minutes: Long): String = if (minutes < 60) "$minutes dk" else 
 @Composable
 fun TripsContent(log: TripLog) {
     val trips by log.trips.collectAsStateWithLifecycle()
-    val totals = remember(trips) { kmTotals(trips, LocalDate.now()) }
+    val totals = remember(trips) { kmTotals(trips, io.github.yorulmazsinan.kokpit.time.TrueTime.date()) }
     Column(Modifier.fillMaxSize().padding(horizontal = Dimens.ScreenPadding, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(Dimens.Gap)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap)) {
             Stat(stringResource(R.string.trips_today), totals.todayKm.km1(), "km", Modifier.weight(1f))

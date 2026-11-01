@@ -12,9 +12,9 @@ import kotlinx.coroutines.delay
 /** Small accent-coloured clock for the right side of screen headers. */
 @Composable
 fun HeaderClock() {
-    val now by produceState(LocalTime.now()) {
+    val now by produceState(io.github.yorulmazsinan.kokpit.time.TrueTime.time()) {
         while (true) {
-            value = LocalTime.now()
+            value = io.github.yorulmazsinan.kokpit.time.TrueTime.time()
             delay(60_000L - (System.currentTimeMillis() % 60_000L))
         }
     }

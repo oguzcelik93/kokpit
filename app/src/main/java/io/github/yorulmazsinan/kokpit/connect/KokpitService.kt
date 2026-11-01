@@ -21,6 +21,7 @@ import io.github.yorulmazsinan.kokpit.MainActivity
 import io.github.yorulmazsinan.kokpit.system.HomeGuard
 import io.github.yorulmazsinan.kokpit.carplay.isIphoneAttached
 import io.github.yorulmazsinan.kokpit.intro.pickIntroVideo
+import io.github.yorulmazsinan.kokpit.intro.IntroGate
 import io.github.yorulmazsinan.kokpit.intro.allIntroVideos
 import io.github.yorulmazsinan.kokpit.intro.currentTemperature
 import io.github.yorulmazsinan.kokpit.intro.seasonFor
@@ -204,7 +205,8 @@ class KokpitService : Service() {
         val container = (application as KokpitApp).container
         val intro = container.settings.current().intro
         val videos = allIntroVideos(container.introLibrary)
-        val season = seasonFor(LocalDate.now(), currentTemperature(container.weather.state.value))
+        val season = seasonFor(io.github.yorulmazsinan.kokpit.time.TrueTime.date(), currentTemperature(container.weather.state.value))
+        if (IntroGate.recentlyPlayed()) return true
         val video = pickIntroVideo(intro, videos, sleptMs, Random.Default, season) ?: return false
         if (!introAllowedAt(container.drive.state.value.speedKmh)) {
             log("intro skipped: moving")

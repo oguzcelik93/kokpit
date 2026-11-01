@@ -143,7 +143,7 @@ private fun FuelForm(car: CarRepository, lastOdometer: Int?) {
                     km == null || l == null || p == null -> Toast.makeText(context, R.string.fuel_invalid, Toast.LENGTH_SHORT).show()
                     lastOdometer != null && km <= lastOdometer -> Toast.makeText(context, R.string.fuel_odometer_low, Toast.LENGTH_SHORT).show()
                     else -> {
-                        car.addFuel(FuelEntry(System.currentTimeMillis(), km, l, p, full))
+                        car.addFuel(FuelEntry(io.github.yorulmazsinan.kokpit.time.TrueTime.nowMs(), km, l, p, full))
                         odometer = ""; liters = ""; price = ""; full = true
                     }
                 }

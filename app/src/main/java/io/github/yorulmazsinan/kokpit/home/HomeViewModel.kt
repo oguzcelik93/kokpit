@@ -27,7 +27,7 @@ class HomeViewModel(private val container: AppContainer) : ViewModel() {
 
     private val clock = flow {
         while (true) {
-            emit(LocalTime.now())
+            emit(io.github.yorulmazsinan.kokpit.time.TrueTime.time())
             delay(30_000)
         }
     }

@@ -165,7 +165,7 @@ class DeviceActions(
 
     override fun status(): String {
         val tr = Locale.forLanguageTag("tr-TR")
-        val now = LocalDateTime.now()
+        val now = io.github.yorulmazsinan.kokpit.time.TrueTime.dateTime()
         val trip = container.drive.state.value
         return buildList {
             add("Saat ${now.format(DateTimeFormatter.ofPattern("HH:mm"))}, ${now.format(DateTimeFormatter.ofPattern("d MMMM yyyy EEEE", tr))}.")

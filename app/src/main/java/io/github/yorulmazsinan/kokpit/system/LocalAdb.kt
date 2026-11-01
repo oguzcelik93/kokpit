@@ -27,6 +27,8 @@ object AdbCommands {
     fun keepAwake(ownPackage: String) = "dumpsys deviceidle whitelist +${checked(ownPackage)}"
     fun allowAwake(ownPackage: String) = "dumpsys deviceidle whitelist -${checked(ownPackage)}"
     fun allowUsageAccess(ownPackage: String) = "appops set ${checked(ownPackage)} GET_USAGE_STATS allow"
+    /** Compiles Kokpit ahead of time now instead of whenever Android feels like it: much faster start on slow units. */
+    fun compile(ownPackage: String) = "cmd package compile -m speed -f ${checked(ownPackage)}"
     const val LIST_DISABLED = "pm list packages -d"
 
     private fun checked(pkg: String): String {
@@ -76,6 +78,7 @@ class LocalAdb(private val context: Context) {
         val granted = adb.shell(AdbCommands.grantSecureSettings(own)).exitCode == 0
         adb.shell(AdbCommands.allowUsageAccess(own))
         adb.shell(AdbCommands.keepAwake(own))
+        adb.shell(AdbCommands.compile(own))
         val alreadyOff = parsePackageList(adb.shell(AdbCommands.LIST_DISABLED).output)
         val done = mutableListOf<String>()
         val failed = mutableListOf<String>()

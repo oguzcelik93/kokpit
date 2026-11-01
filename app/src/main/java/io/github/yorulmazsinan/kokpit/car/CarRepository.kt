@@ -27,7 +27,7 @@ class CarRepository(context: Context) {
     fun setHome(place: Place) = savePlace(KEY_HOME, place).also { _home.value = place }
     fun setWork(place: Place) = savePlace(KEY_WORK, place).also { _work.value = place }
 
-    fun park(lat: Double, lon: Double, timeMs: Long = System.currentTimeMillis()) {
+    fun park(lat: Double, lon: Double, timeMs: Long = io.github.yorulmazsinan.kokpit.time.TrueTime.nowMs()) {
         val spot = ParkedSpot(lat, lon, timeMs)
         prefs.edit().putString(KEY_PARKED, json.encodeToString(ParkedSpot.serializer(), spot)).commit()
         _parked.value = spot
