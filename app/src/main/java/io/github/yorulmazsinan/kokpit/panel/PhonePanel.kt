@@ -21,6 +21,16 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.security.SecureRandom
 import java.time.YearMonth
+import io.github.yorulmazsinan.kokpit.system.BRIGHTNESS_MAX
+import io.github.yorulmazsinan.kokpit.system.BRIGHTNESS_MIN
+import io.github.yorulmazsinan.kokpit.system.Brightness
+import io.github.yorulmazsinan.kokpit.update.UpdateState
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -146,6 +156,82 @@ class PhonePanel(private val context: Context, private val container: AppContain
                 container.car.setPlace(if (kind == "home") PlaceKind.HOME else PlaceKind.WORK, Place(address = address))
                 ok()
             }
+            req.method == "GET" && req.path == "/api/settings" -> reply(out, 200, "application/json; charset=utf-8", panelSettingsJson(container.settings.settings.value).toByteArray())
+            req.method == "POST" && req.path == "/api/settings" -> {
+                val text = body(PANEL_MAX_JSON)?.decodeToString() ?: return bad("Boş")
+                val current = runBlocking { container.settings.current() }
+                val changed = applyPanelSettings(current, text) ?: return bad("Geçersiz ayar")
+                runBlocking { container.settings.update { changed } }
+                container.scope.launch { container.autoBrightness.reapply() }
+                ok()
+            }
+            req.method == "POST" && req.path == "/api/brightness" -> {
+                val text = body(PANEL_MAX_JSON)?.decodeToString() ?: return bad("Boş")
+                val value = runCatching { Json.parseToJsonElement(text).jsonObject["value"]?.jsonPrimitive?.int }.getOrNull()
+                    ?.takeIf { it in BRIGHTNESS_MIN..BRIGHTNESS_MAX } ?: return bad("Parlaklık 10–255 olmalı")
+                if (!Brightness.canWrite(context)) return bad("Ünitede bir kez parlaklık izni verilmeli (☀ düğmesi)")
+                Brightness.set(context, value)
+                ok()
+            }
+            req.method == "GET" && req.path == "/api/trips" -> reply(out, 200, "application/json; charset=utf-8", tripsJson().toByteArray())
+            req.method == "POST" && recordDelete(req.path, "trips") != null -> {
+                val start = recordDelete(req.path, "trips")!!
+                val trip = container.trips.trips.value.firstOrNull { it.startMs == start } ?: return bad("Kayıt yok")
+                container.trips.delete(trip)
+                ok()
+            }
+            req.method == "GET" && req.path == "/api/fuel" -> reply(out, 200, "application/json; charset=utf-8", fuelJson().toByteArray())
+            req.method == "POST" && recordDelete(req.path, "fuel") != null -> {
+                val time = recordDelete(req.path, "fuel")!!
+                val entry = container.car.fuel.value.firstOrNull { it.timeMs == time } ?: return bad("Kayıt yok")
+                container.car.removeFuel(entry)
+                ok()
+            }
+            req.method == "GET" && req.path == "/api/park" -> {
+                val spot = container.car.parked.value
+                val text = if (spot == null) "{}" else buildJsonObject {
+                    put("time", java.time.Instant.ofEpochMilli(spot.timeMs).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime().withNano(0).toString())
+                    put("link", io.github.yorulmazsinan.kokpit.car.mapsLink(spot.lat, spot.lon))
+                }.toString()
+                reply(out, 200, "application/json; charset=utf-8", text.toByteArray())
+            }
+            req.method == "GET" && req.path == "/api/bt" -> {
+                val list = JsonArray(container.btConnect.phones().map { p ->
+                    buildJsonObject { put("address", p.address); put("name", p.name); put("connected", p.connected) }
+                })
+                reply(out, 200, "application/json; charset=utf-8", list.toString().toByteArray())
+            }
+            req.method == "POST" && req.path == "/api/bt/switch" -> {
+                val text = body(PANEL_MAX_JSON)?.decodeToString() ?: return bad("Boş")
+                val address = runCatching { Json.parseToJsonElement(text).jsonObject["address"]?.jsonPrimitive?.content }.getOrNull()
+                    ?.takeIf(::isBluetoothAddress) ?: return bad("Geçersiz telefon")
+                if (container.btConnect.phones().none { it.address == address }) return bad("Bu telefon eşleşmiş değil")
+                val done = runBlocking { container.btConnect.switchTo(address) }
+                if (done) ok("Bağlandı") else bad("Bağlanmadı — telefonun Bluetooth'u açık mı?")
+            }
+            req.method == "POST" && req.path == "/api/intro" -> {
+                val bytes = body(PANEL_MAX_VIDEO) ?: return bad("Video en çok 20 MB olabilir")
+                if (!looksLikeMp4(bytes.copyOfRange(0, minOf(16, bytes.size)))) return bad("Yalnızca MP4 video")
+                val name = "telefon-${TrueTime.dateTime().withNano(0).toString().replace(':', '-')}.mp4"
+                container.introLibrary.import(ByteArrayInputStream(bytes), name, bytes.size.toLong())
+                    .fold({ ok() }, { bad("Video eklenemedi") })
+            }
+            req.method == "GET" && req.path == "/api/update" -> {
+                val text = when (val u = container.updater.state.value) {
+                    is UpdateState.Ready -> "${u.info.versionName} indirildi — ünitede üstteki yazıya dokunup Kur deyin"
+                    is UpdateState.Available -> "${u.info.versionName} var"
+                    is UpdateState.Downloading -> "${u.info.versionName} indiriliyor %${u.percent}"
+                    is UpdateState.UpToDate -> "Güncel (${BuildConfig.VERSION_NAME})"
+                    is UpdateState.Failed -> "Kontrol edilemedi: ${u.reason}"
+                    UpdateState.Checking -> "Kontrol ediliyor…"
+                    UpdateState.Idle -> "Kurulu: ${BuildConfig.VERSION_NAME}"
+                }
+                ok(text)
+            }
+            req.method == "POST" && req.path == "/api/update/check" -> {
+                container.scope.launch { container.updater.check(downloadIfNew = true) }
+                ok()
+            }
             req.method == "POST" && req.path == "/api/close" -> { ok(); close() }
             else -> reply(out, 404, "text/plain", "not found".toByteArray())
         }
@@ -169,6 +255,33 @@ class PhonePanel(private val context: Context, private val container: AppContain
         }.toString()
     }
 
+    private fun tripsJson(): String {
+        val trips = container.trips.trips.value
+        val totals = io.github.yorulmazsinan.kokpit.car.kmTotals(trips, TrueTime.date())
+        val zone = java.time.ZoneId.systemDefault()
+        return buildJsonObject {
+            put("today", totals.todayKm); put("week", totals.weekKm); put("month", totals.monthKm); put("total", totals.totalKm)
+            put("trips", JsonArray(trips.take(100).map { t ->
+                buildJsonObject {
+                    put("start", t.startMs)
+                    put("when", java.time.Instant.ofEpochMilli(t.startMs).atZone(zone).toLocalDateTime().withNano(0).toString())
+                    put("km", t.km); put("minutes", t.minutes)
+                }
+            }))
+        }.toString()
+    }
+
+    private fun fuelJson(): String {
+        val zone = java.time.ZoneId.systemDefault()
+        return JsonArray(container.car.fuel.value.map { f ->
+            buildJsonObject {
+                put("time", f.timeMs)
+                put("date", java.time.Instant.ofEpochMilli(f.timeMs).atZone(zone).toLocalDate().toString())
+                put("km", f.odometerKm); put("liters", f.liters); put("price", f.totalPrice); put("full", f.full)
+            }
+        }).toString()
+    }
+
     private fun readHead(input: InputStream): String? {
         val sb = StringBuilder()
         while (sb.length < 8_192) {
@@ -181,7 +294,7 @@ class PhonePanel(private val context: Context, private val container: AppContain
     }
 
     private fun reply(out: OutputStream, code: Int, type: String, body: ByteArray) {
-        val reason = mapOf(200 to "OK", 400 to "Bad Request", 403 to "Forbidden", 404 to "Not Found")[code] ?: "Error"
+        val reason = mapOf(200 to "OK", 400 to "Bad Request", 403 to "Forbidden", 404 to "Not Found", 413 to "Payload Too Large")[code] ?: "Error"
         out.write("HTTP/1.1 $code $reason\r\nContent-Type: $type\r\nContent-Length: ${body.size}\r\nConnection: close\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\n".toByteArray())
         out.write(body)
         out.flush()

@@ -459,4 +459,25 @@
     <string name="panel_close">Close panel</string>
     <string name="panel_safety">Only reachable on the hotspot network, with the code in this QR (new every time). Closes after 15 minutes unused or 1 hour in any case. It can\'t install apps or change system settings.</string>
     <string name="panel_pill">Phone panel open · tap to close</string>
+    <string name="settings_categories">Settings</string>
+    <string name="settings_update_ready">Update %1$s ready — tap to install</string>
+    <string name="settings_update_current">Kokpit %1$s · tap to check</string>
+    <string name="settings_cat_appearance">Appearance &amp; clock</string>
+    <string name="settings_cat_appearance_help">Theme, colours, brightness, Night Panel, clock</string>
+    <string name="settings_cat_car">Car &amp; ignition</string>
+    <string name="settings_cat_car_help">Home/Work, logbook, Bluetooth phones, home card, music resume, stand-by</string>
+    <string name="settings_cat_connection">Connections</string>
+    <string name="settings_cat_connection_help">Wi-Fi hotspot, Bluetooth, CarPlay</string>
+    <string name="settings_cat_intro">Welcome video &amp; calendar</string>
+    <string name="settings_cat_intro_help">Summer/winter clips, your own videos, calendar</string>
+    <string name="settings_cat_dock">Buttons</string>
+    <string name="settings_cat_dock_help">Which app each bottom button opens</string>
+    <string name="settings_cat_assistant">AI assistant</string>
+    <string name="settings_cat_assistant_help">Provider, API key, model</string>
+    <string name="settings_cat_screens">Unit screens</string>
+    <string name="settings_cat_screens_help">Kokpit\'s own phone, music and radio screens</string>
+    <string name="settings_cat_system">System</string>
+    <string name="settings_cat_system_help">Speed-up, recovery, diagnostics, system tools</string>
+    <string name="settings_cat_about">About</string>
+    <string name="settings_cat_about_help">Version, licence, source code</string>
 </resources>

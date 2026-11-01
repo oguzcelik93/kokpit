@@ -254,6 +254,7 @@ object Routes {
     const val BT_PHONES = "bt-phones"
     const val WINDOW = "window"
     const val PHONE_PANEL = "phone-panel"
+    const val SETTINGS_CATEGORY = "settings/{cat}"
 }
 
 /** Dock slots with a Kokpit screen; those screens and home keep the dock on the bottom. */
@@ -484,8 +485,34 @@ private fun KokpitNavHost(
         }
         composable(Routes.PLAYER) { PlayerScreen(container, onBack = { nav.popBackStack() }) }
         composable(Routes.SETTINGS) {
+            val category: io.github.yorulmazsinan.kokpit.settings.SettingsCategory? = null
             SettingsScreen(
                 container = container,
+                category = category,
+                onOpenCategory = { nav.navigate("settings/${it.name}") },
+                onBack = { nav.popBackStack() },
+                onPickApp = { nav.navigate("picker/${it.name}") },
+                onOpenIntro = { nav.navigate(Routes.INTRO) },
+                onOpenSystemTools = { nav.navigate(Routes.SYSTEM_TOOLS) },
+                onOpenDiagnostics = { nav.navigate(Routes.DIAGNOSTICS) },
+                onOpenPreview = { nav.navigate(it) },
+                onOpenCarPlay = { nav.navigate(Routes.CARPLAY) },
+                onOpenPerformance = { nav.navigate(Routes.PERFORMANCE) },
+                onOpenRecovery = { nav.navigate(Routes.RECOVERY) },
+                onOpenPlaces = { nav.navigate(Routes.PLACES) },
+                onOpenFuel = { nav.navigate(Routes.FUEL) },
+                onOpenUpdate = { nav.navigate(Routes.UPDATE) },
+                onOpenBtPhones = { nav.navigate(Routes.BT_PHONES) },
+                onOpenWindow = { nav.navigate(Routes.WINDOW) },
+                onOpenPhonePanel = { nav.navigate(Routes.PHONE_PANEL) },
+            )
+        }
+        composable(Routes.SETTINGS_CATEGORY) { entry ->
+            val category = entry.arguments?.getString("cat")?.let { runCatching { io.github.yorulmazsinan.kokpit.settings.SettingsCategory.valueOf(it) }.getOrNull() }
+            SettingsScreen(
+                container = container,
+                category = category,
+                onOpenCategory = { nav.navigate("settings/${it.name}") },
                 onBack = { nav.popBackStack() },
                 onPickApp = { nav.navigate("picker/${it.name}") },
                 onOpenIntro = { nav.navigate(Routes.INTRO) },

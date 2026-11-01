@@ -3,6 +3,7 @@ package io.github.yorulmazsinan.kokpit.panel
 import io.github.yorulmazsinan.kokpit.car.FuelEntry
 import io.github.yorulmazsinan.kokpit.car.parseDecimal
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
@@ -69,3 +70,81 @@ fun parsePlace(body: String): Pair<String, String?>? = runCatching {
     if (address != null && address.isNotEmpty() && address.length !in 2..200) return null
     kind to address?.ifEmpty { null }
 }.getOrNull()
+
+/** Largest welcome video the panel accepts (same as the USB import). */
+const val PANEL_MAX_VIDEO = 20 * 1024 * 1024
+
+/** MP4 files carry "ftyp" at byte 4. */
+fun looksLikeMp4(head: ByteArray): Boolean =
+    head.size >= 8 && String(head.copyOfRange(4, 8), Charsets.US_ASCII) == "ftyp"
+
+/** `AA:BB:CC:DD:EE:FF` — the only form a Bluetooth address takes. */
+fun isBluetoothAddress(text: String): Boolean = Regex("^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$").matches(text)
+
+/** `/api/trips/1793040000000/delete` → 1793040000000 (same for fuel). */
+fun recordDelete(path: String, kind: String): Long? =
+    Regex("^/api/$kind/([0-9]{1,19})/delete$").find(path)?.groupValues?.get(1)?.toLongOrNull()
+
+/** Settings the panel may change, with the values each may take. Anything else is refused. */
+private val BOOL_SETTINGS = setOf(
+    "autoBrightness", "autoNightPanel", "idleScreen", "autoResume", "wakeToKokpit", "keepHome",
+    "autoCarPlayOnUsb", "autoUpdate", "introSound", "introEveryWake",
+)
+
+/**
+ * Applies a settings change from the panel, e.g. `{"idleMinutes":5,"keepHome":true}`.
+ * Returns null — and changes nothing — if any key is unknown or any value out of range.
+ */
+fun applyPanelSettings(current: io.github.yorulmazsinan.kokpit.settings.KokpitSettings, body: String): io.github.yorulmazsinan.kokpit.settings.KokpitSettings? = runCatching {
+    val o = json.parseToJsonElement(body).jsonObject
+    var s = current
+    for ((key, value) in o) {
+        val p = value.jsonPrimitive
+        if (key in BOOL_SETTINGS) {
+            val b = p.booleanOrNull ?: return null
+            s = when (key) {
+                "autoBrightness" -> s.copy(autoBrightness = b)
+                "autoNightPanel" -> s.copy(autoNightPanel = b)
+                "idleScreen" -> s.copy(idleScreen = b)
+                "autoResume" -> s.copy(autoResume = b)
+                "wakeToKokpit" -> s.copy(wakeToKokpit = b)
+                "keepHome" -> s.copy(keepHome = b)
+                "autoCarPlayOnUsb" -> s.copy(autoCarPlayOnUsb = b)
+                "autoUpdate" -> s.copy(autoUpdate = b)
+                "introSound" -> s.copy(intro = s.intro.copy(withSound = b))
+                else -> s.copy(intro = s.intro.copy(everyWake = b))
+            }
+            continue
+        }
+        s = when (key) {
+            "themeMode" -> s.copy(themeMode = io.github.yorulmazsinan.kokpit.home.ThemeMode.valueOf(p.content))
+            "accent" -> s.copy(accent = io.github.yorulmazsinan.kokpit.ui.theme.ThemeAccent.valueOf(p.content))
+            "introMode" -> s.copy(intro = s.intro.copy(mode = io.github.yorulmazsinan.kokpit.intro.IntroMode.valueOf(p.content)))
+            "dayBrightness" -> s.copy(dayBrightness = p.content.toInt().takeIf { it in 10..255 } ?: return null)
+            "nightBrightness" -> s.copy(nightBrightness = p.content.toInt().takeIf { it in 10..255 } ?: return null)
+            "idleMinutes" -> s.copy(idleMinutes = p.content.toInt().takeIf { it in setOf(1, 2, 5, 10) } ?: return null)
+            else -> return null
+        }
+    }
+    s
+}.getOrNull()
+
+/** The same settings as JSON, for the panel to show. */
+fun panelSettingsJson(s: io.github.yorulmazsinan.kokpit.settings.KokpitSettings): String = kotlinx.serialization.json.buildJsonObject {
+    put("themeMode", JsonPrimitive(s.themeMode.name))
+    put("accent", JsonPrimitive(s.accent.name))
+    put("introMode", JsonPrimitive(s.intro.mode.name))
+    put("introSound", JsonPrimitive(s.intro.withSound))
+    put("introEveryWake", JsonPrimitive(s.intro.everyWake))
+    put("autoBrightness", JsonPrimitive(s.autoBrightness))
+    put("dayBrightness", JsonPrimitive(s.dayBrightness))
+    put("nightBrightness", JsonPrimitive(s.nightBrightness))
+    put("autoNightPanel", JsonPrimitive(s.autoNightPanel))
+    put("idleScreen", JsonPrimitive(s.idleScreen))
+    put("idleMinutes", JsonPrimitive(s.idleMinutes))
+    put("autoResume", JsonPrimitive(s.autoResume))
+    put("wakeToKokpit", JsonPrimitive(s.wakeToKokpit))
+    put("keepHome", JsonPrimitive(s.keepHome))
+    put("autoCarPlayOnUsb", JsonPrimitive(s.autoCarPlayOnUsb))
+    put("autoUpdate", JsonPrimitive(s.autoUpdate))
+}.toString()

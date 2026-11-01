@@ -60,3 +60,53 @@ class PanelRulesTest {
         }
     }
 }
+
+class PanelSettingsTest {
+    private val base = io.github.yorulmazsinan.kokpit.settings.KokpitSettings()
+
+    @Test
+    fun allowedChangesApply() {
+        val s = applyPanelSettings(base, """{"idleMinutes":5,"keepHome":false,"themeMode":"AUTO","introMode":"OFF","dayBrightness":200}""")!!
+        assertEquals(5, s.idleMinutes)
+        assertFalse(s.keepHome)
+        assertEquals(io.github.yorulmazsinan.kokpit.home.ThemeMode.AUTO, s.themeMode)
+        assertEquals(io.github.yorulmazsinan.kokpit.intro.IntroMode.OFF, s.intro.mode)
+        assertEquals(200, s.dayBrightness)
+    }
+
+    @Test
+    fun anythingElseIsRefusedWhole() {
+        assertNull(applyPanelSettings(base, """{"idleMinutes":5,"hotspotPassword":"x"}""")) // not on the list
+        assertNull(applyPanelSettings(base, """{"idleMinutes":7}"""))
+        assertNull(applyPanelSettings(base, """{"dayBrightness":999}"""))
+        assertNull(applyPanelSettings(base, """{"themeMode":"HACK"}"""))
+        assertNull(applyPanelSettings(base, """{"keepHome":"yes"}"""))
+        assertNull(applyPanelSettings(base, "nope"))
+    }
+
+    @Test
+    fun settingsRoundTripAsJson() {
+        val json = panelSettingsJson(base)
+        assertTrue(json.contains("\"idleMinutes\":2"))
+        assertNotNull(applyPanelSettings(base, json))
+    }
+
+    @Test
+    fun otherChecks() {
+        assertTrue(looksLikeMp4(byteArrayOf(0, 0, 0, 0x18, 'f'.code.toByte(), 't'.code.toByte(), 'y'.code.toByte(), 'p'.code.toByte())))
+        assertFalse(looksLikeMp4("<html>xxxx".toByteArray()))
+        assertTrue(isBluetoothAddress("AA:bb:01:23:45:6F"))
+        assertFalse(isBluetoothAddress("AA:BB:CC:DD:EE"))
+        assertFalse(isBluetoothAddress("AA:BB:CC:DD:EE:FF;reboot"))
+        assertEquals(1793040000000L, recordDelete("/api/trips/1793040000000/delete", "trips"))
+        assertNull(recordDelete("/api/trips/abc/delete", "trips"))
+        assertNull(recordDelete("/api/fuel/123/delete", "trips"))
+    }
+
+    @Test
+    fun pageScriptHasNoBrokenEscapes() {
+        val page = panelPage("abc123")
+        val script = page.substringAfter("<script>").substringBefore("</script>")
+        assertFalse("a doubled backslash before a quote ends a JS string early", script.contains("\\\\'"))
+    }
+}

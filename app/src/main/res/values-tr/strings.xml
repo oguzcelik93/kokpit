@@ -459,4 +459,25 @@
     <string name="panel_close">Paneli kapat</string>
     <string name="panel_safety">Yalnızca hotspot ağından ve bu QR\'daki kodla (her seferinde yeni) açılır. 15 dakika kullanılmazsa ya da her durumda 1 saat sonra kapanır. Uygulama kuramaz, sistem ayarlarını değiştiremez.</string>
     <string name="panel_pill">Telefon paneli açık · kapatmak için dokunun</string>
+    <string name="settings_categories">Ayarlar</string>
+    <string name="settings_update_ready">Güncelleme %1$s hazır — kurmak için dokunun</string>
+    <string name="settings_update_current">Kokpit %1$s · kontrol etmek için dokunun</string>
+    <string name="settings_cat_appearance">Görünüm ve saat</string>
+    <string name="settings_cat_appearance_help">Tema, renk, parlaklık, Night Panel, saat</string>
+    <string name="settings_cat_car">Araç ve kontak</string>
+    <string name="settings_cat_car_help">Ev/İş, araç defteri, Bluetooth telefonlar, ana ekran kartı, müzik sürdürme, bekleme ekranı</string>
+    <string name="settings_cat_connection">Bağlantılar</string>
+    <string name="settings_cat_connection_help">Wi-Fi hotspot, Bluetooth, CarPlay</string>
+    <string name="settings_cat_intro">Karşılama videosu ve takvim</string>
+    <string name="settings_cat_intro_help">Yaz/kış videoları, kendi videolarınız, takvim</string>
+    <string name="settings_cat_dock">Düğmeler</string>
+    <string name="settings_cat_dock_help">Alttaki düğmelerin açtığı uygulamalar</string>
+    <string name="settings_cat_assistant">Yapay zekâ asistanı</string>
+    <string name="settings_cat_assistant_help">Sağlayıcı, API anahtarı, model</string>
+    <string name="settings_cat_screens">Ünite ekranları</string>
+    <string name="settings_cat_screens_help">Kokpit\'in kendi telefon, müzik ve radyo ekranları</string>
+    <string name="settings_cat_system">Sistem</string>
+    <string name="settings_cat_system_help">Hızlandırma, kurtarma, teşhis, sistem araçları</string>
+    <string name="settings_cat_about">Hakkında</string>
+    <string name="settings_cat_about_help">Sürüm, lisans, kaynak kodu</string>
 </resources>
