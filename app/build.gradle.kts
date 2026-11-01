@@ -15,8 +15,8 @@ android {
         applicationId = "io.github.oguzcelik93.kokpit93"
         minSdk = 27
         targetSdk = 35
-        versionCode = 28
-        versionName = "0.13.0"
+        versionCode = 29
+        versionName = "0.14.0"
     }
 
     // The signing key never lives in the repository. It comes from, in order:

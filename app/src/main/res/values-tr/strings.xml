@@ -457,7 +457,7 @@
     <string name="panel_scan">Telefonunuzla okutun</string>
     <string name="panel_scan_help">Ünitenin hotspot\'u olan telefonu kullanın. Panel telefonun tarayıcısında açılır: fotoğraf ekleyin, kart fotoğrafını seçin, yakıt girin, Ev/İş yazın, raporu görün.</string>
     <string name="panel_close">Paneli kapat</string>
-    <string name="panel_safety">Yalnızca hotspot ağından ve bu QR\'daki kodla (her seferinde yeni) açılır. 15 dakika kullanılmazsa ya da her durumda 1 saat sonra kapanır. Uygulama kuramaz, sistem ayarlarını değiştiremez.</string>
+    <string name="panel_safety">Yalnızca bu QR (her seferinde yeni) ve PIN\'inizle açılır; 5 yanlış PIN bir süre kilitler. 15 dakika kullanılmazsa ya da her durumda 1 saat sonra kapanır. Uygulama kuramaz, sistem ayarlarını değiştiremez.</string>
     <string name="panel_pill">Telefon paneli açık · kapatmak için dokunun</string>
     <string name="settings_categories">Ayarlar</string>
     <string name="settings_update_ready">Güncelleme %1$s hazır — kurmak için dokunun</string>
@@ -480,4 +480,16 @@
     <string name="settings_cat_system_help">Hızlandırma, kurtarma, teşhis, sistem araçları</string>
     <string name="settings_cat_about">Hakkında</string>
     <string name="settings_cat_about_help">Sürüm, lisans, kaynak kodu</string>
+    <string name="panel_own_wifi">Kokpit\'in kendi ağı</string>
+    <string name="panel_own_wifi_help">Hotspot yok mu? Ünite yalnızca panel için kendi Wi-Fi\'ını (internetsiz) açar</string>
+    <string name="panel_no_network">Ünite bir ağa bağlı değil. \"Kokpit\'in kendi ağı\"na dokunun: ünite kendi ağını açar, hotspot gerekmez.</string>
+    <string name="panel_step_wifi">Adım 1 · ünitenin ağına bağlanın</string>
+    <string name="panel_step_panel">Adım 2 · paneli açın</string>
+    <string name="panel_wifi_scan">Telefonun kamerasıyla okutun: kendiliğinden bağlanır</string>
+    <string name="panel_wifi_manual">Ya da elle: %1$s · şifre %2$s. Telefonun mobil interneti açık kalır.</string>
+    <string name="panel_scan_help_pin">Panel telefonun tarayıcısında açılır ve 4 haneli PIN\'inizi sorar.</string>
+    <string name="panel_scan_help_newpin">İlk bağlantı: panel 4 haneli bir PIN belirlemenizi ister. Bundan sonra her açılışta sorar.</string>
+    <string name="panel_pin_reset">Panel PIN\'ini sıfırla</string>
+    <string name="panel_pin_reset_help">Unuttunuz mu? Sonraki bağlantıda yenisi belirlenir</string>
+    <string name="panel_pin_reset_confirm">PIN unutulur; bağlanan ilk telefon yenisini belirler. Yalnızca burada, ünitede yapılabilir.</string>
 </resources>

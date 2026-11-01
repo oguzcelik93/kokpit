@@ -457,7 +457,7 @@
     <string name="panel_scan">Scan with your phone</string>
     <string name="panel_scan_help">Use the phone that is the unit\'s hotspot. The panel opens in its browser: add photos, pick the card photo, enter fuel, set home/work, read the report.</string>
     <string name="panel_close">Close panel</string>
-    <string name="panel_safety">Only reachable on the hotspot network, with the code in this QR (new every time). Closes after 15 minutes unused or 1 hour in any case. It can\'t install apps or change system settings.</string>
+    <string name="panel_safety">Opens only with this QR (new each time) and your PIN; 5 wrong PINs lock it for a while. Closes after 15 minutes unused or 1 hour in any case. It can\'t install apps or change system settings.</string>
     <string name="panel_pill">Phone panel open · tap to close</string>
     <string name="settings_categories">Settings</string>
     <string name="settings_update_ready">Update %1$s ready — tap to install</string>
@@ -480,4 +480,16 @@
     <string name="settings_cat_system_help">Speed-up, recovery, diagnostics, system tools</string>
     <string name="settings_cat_about">About</string>
     <string name="settings_cat_about_help">Version, licence, source code</string>
+    <string name="panel_own_wifi">Kokpit\'s own Wi-Fi</string>
+    <string name="panel_own_wifi_help">No hotspot? The unit opens its own Wi-Fi (no internet) just for the panel</string>
+    <string name="panel_no_network">The unit is on no network. Tap \"Kokpit\'s own Wi-Fi\": the unit opens its own network, no hotspot needed.</string>
+    <string name="panel_step_wifi">Step 1 · join the unit\'s Wi-Fi</string>
+    <string name="panel_step_panel">Step 2 · open the panel</string>
+    <string name="panel_wifi_scan">Scan with the phone camera: it joins by itself</string>
+    <string name="panel_wifi_manual">Or by hand: %1$s · password %2$s. The phone keeps its mobile data.</string>
+    <string name="panel_scan_help_pin">The panel opens in the phone\'s browser and asks for your 4-digit PIN.</string>
+    <string name="panel_scan_help_newpin">First connection: the panel asks you to choose a 4-digit PIN. From then on it asks for it every time.</string>
+    <string name="panel_pin_reset">Reset panel PIN</string>
+    <string name="panel_pin_reset_help">Forgot it? The next connection sets a new one</string>
+    <string name="panel_pin_reset_confirm">The PIN is forgotten; the next phone that connects sets a new one. Only possible here, on the unit.</string>
 </resources>

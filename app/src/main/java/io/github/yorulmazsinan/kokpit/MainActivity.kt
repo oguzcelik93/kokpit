@@ -444,7 +444,7 @@ private fun KokpitNavHost(
                 onOpenWindow = { nav.navigate(Routes.WINDOW) { launchSingleTop = true } },
             )
         }
-        composable(Routes.PHONE_PANEL) { io.github.yorulmazsinan.kokpit.panel.PhonePanelScreen(container.phonePanel, onBack = { nav.popBackStack() }) }
+        composable(Routes.PHONE_PANEL) { io.github.yorulmazsinan.kokpit.panel.PhonePanelScreen(container.phonePanel, container.localHotspot, onBack = { nav.popBackStack() }) }
         composable(Routes.WINDOW) {
             io.github.yorulmazsinan.kokpit.home.WindowScreen(container, onBack = { nav.popBackStack() }, onPickApp = { nav.navigate("picker/${it.name}") })
         }

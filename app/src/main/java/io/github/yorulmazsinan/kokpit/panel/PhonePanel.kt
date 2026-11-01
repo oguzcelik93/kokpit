@@ -56,10 +56,13 @@ class PhonePanel(private val context: Context, private val container: AppContain
     val status: StateFlow<Status?> = _status.asStateFlow()
     @Volatile private var server: ServerSocket? = null
     @Volatile private var token: String = ""
+    private val pin = PanelPin(context)
+    /** Sessions opened with the PIN during this opening of the panel. */
+    private val sessions = java.util.concurrent.CopyOnWriteArraySet<String>()
 
     /** Opens the panel; returns its link (for the QR), or null without a network. */
     fun open(): String? {
-        close()
+        stopServer()
         val ip = localIpv4() ?: return null
         token = ByteArray(16).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
         val socket = runCatching { ServerSocket(0, 8, InetAddress.getByName(ip)) }.getOrNull() ?: return null
@@ -82,13 +85,33 @@ class PhonePanel(private val context: Context, private val container: AppContain
                 if (server === socket) {
                     server = null
                     _status.value = null
+                    onClosed()
                 }
             }
         }.apply { isDaemon = true; name = "kokpit-panel" }.start()
         return url
     }
 
+    /** On the unit only: forget the PIN (the next connection sets a new one). */
+    fun resetPin() {
+        pin.reset()
+        sessions.clear()
+    }
+
+    val pinSet: Boolean get() = pin.isSet
+
+    /** Called whenever the panel stops (closed, timed out). */
+    var onClosed: () -> Unit = {}
+
+    /** Closes the panel (and the unit's own Wi-Fi, if it was opened for it). */
     fun close() {
+        stopServer()
+        onClosed()
+    }
+
+    /** Stops listening without touching the Wi-Fi (used when reopening). */
+    private fun stopServer() {
+        sessions.clear()
         runCatching { server?.close() }
         server = null
         _status.value = null
@@ -119,9 +142,35 @@ class PhonePanel(private val context: Context, private val container: AppContain
         fun ok(text: String = "ok") = reply(out, 200, "text/plain; charset=utf-8", text.toByteArray())
         fun bad(text: String) = reply(out, 400, "text/plain; charset=utf-8", text.toByteArray())
 
+        // The QR's token opens the page and the PIN step; everything else also needs a session,
+        // which only the owner's PIN gives.
+        when {
+            req.method == "GET" && req.path == "/" -> return reply(out, 200, "text/html; charset=utf-8", panelPage(token).toByteArray())
+            req.method == "GET" && req.path == "/api/pin" -> return reply(out, 200, "application/json; charset=utf-8",
+                buildJsonObject { put("set", pin.isSet); put("lockedUntil", pin.lockedUntil()) }.toString().toByteArray())
+            req.method == "POST" && (req.path == "/api/pin/setup" || req.path == "/api/pin/login") -> {
+                val text = body(PANEL_MAX_JSON)?.decodeToString() ?: return bad("Boş")
+                val entered = runCatching { Json.parseToJsonElement(text).jsonObject["pin"]?.jsonPrimitive?.content }.getOrNull().orEmpty()
+                if (req.path == "/api/pin/setup") {
+                    if (pin.isSet) return bad("PIN zaten belirlenmiş")
+                    if (!pin.create(entered)) return bad("4 rakam seçin; 0000, 1234 gibi kolay PIN'ler olmaz")
+                } else {
+                    when (val r = pin.check(entered)) {
+                        PinResult.Ok -> Unit
+                        is PinResult.Wrong -> return bad("Yanlış PIN (${r.triesLeft} hak kaldı)")
+                        is PinResult.Locked -> return bad("Çok fazla yanlış deneme. ${((r.untilMs - System.currentTimeMillis()) / 60_000 + 1)} dakika sonra tekrar deneyin.")
+                    }
+                }
+                val session = ByteArray(16).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
+                sessions += session
+                return ok(session)
+            }
+        }
+        val session = req.headers["x-kokpit-session"] ?: req.query["s"]
+        if (session == null || sessions.none { tokenMatches(it, session) }) return reply(out, 401, "text/plain; charset=utf-8", "PIN gerekli".toByteArray())
+
         val photo = photoAction(req.path)
         when {
-            req.method == "GET" && req.path == "/" -> reply(out, 200, "text/html; charset=utf-8", panelPage(token).toByteArray())
             req.method == "GET" && req.path == "/api/state" -> reply(out, 200, "application/json; charset=utf-8", state().toByteArray())
             req.method == "GET" && req.path.startsWith("/photo/") -> {
                 val id = req.path.removePrefix("/photo/").removeSuffix(".jpg")
@@ -294,7 +343,7 @@ class PhonePanel(private val context: Context, private val container: AppContain
     }
 
     private fun reply(out: OutputStream, code: Int, type: String, body: ByteArray) {
-        val reason = mapOf(200 to "OK", 400 to "Bad Request", 403 to "Forbidden", 404 to "Not Found", 413 to "Payload Too Large")[code] ?: "Error"
+        val reason = mapOf(200 to "OK", 400 to "Bad Request", 403 to "Forbidden", 404 to "Not Found", 413 to "Payload Too Large", 401 to "Unauthorized")[code] ?: "Error"
         out.write("HTTP/1.1 $code $reason\r\nContent-Type: $type\r\nContent-Length: ${body.size}\r\nConnection: close\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\n".toByteArray())
         out.write(body)
         out.flush()

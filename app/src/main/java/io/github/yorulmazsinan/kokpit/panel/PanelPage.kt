@@ -28,9 +28,13 @@ input[type=range]{padding:0}input[type=checkbox]{width:22px;height:22px;margin:0
 textarea{width:100%;height:50vh;background:#0f130c;color:var(--fg);border:1px solid var(--line);border-radius:10px;font:12px monospace}
 </style></head><body>
 <header><h1>Kokpit paneli</h1><small id="info"></small>
-<nav><button data-t="foto" class="on">Fotoğraf</button><button data-t="ayar">Ayarlar</button><button data-t="defter">Defter</button><button data-t="arac">Araç</button><button data-t="sistem">Sistem</button></nav></header>
+<nav id="nav" style="display:none"><button data-t="foto" class="on">Fotoğraf</button><button data-t="ayar">Ayarlar</button><button data-t="defter">Defter</button><button data-t="arac">Araç</button><button data-t="sistem">Sistem</button></nav></header>
 
-<div class="tab on" id="foto"><section><h2>Fotoğraflar</h2>
+<div class="tab on" id="pin"><section><h2 id="pinh">PIN</h2><p class="dim" id="pinp"></p>
+<input id="pinv" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••" style="font-size:28px;letter-spacing:12px;text-align:center">
+<button onclick="pinGo()" style="width:100%">Devam</button><p class="dim" id="pins"></p></section></div>
+
+<div class="tab" id="foto"><section><h2>Fotoğraflar</h2>
 <label class="btn" style="display:block;text-align:center">Fotoğraf ekle<input id="up" type="file" accept="image/*" multiple style="display:none"></label>
 <p class="dim" id="upst"></p><div class="grid" id="grid"></div></section></div>
 
@@ -76,11 +80,20 @@ textarea{width:100%;height:50vh;background:#0f130c;color:var(--fg);border:1px so
 <div id="msg"></div>
 <script>
 var T='$token';
-function u(p){return p+(p.indexOf('?')<0?'?':'&')+'t='+T}
+var S='',pinMode='',firstPin='';
+function u(p){return p+(p.indexOf('?')<0?'?':'&')+'t='+T+(S?'&s='+S:'')}
+function needPin(){S='';q('nav').style.display='none';[].forEach.call(document.querySelectorAll('.tab'),function(t){t.classList.toggle('on',t.id==='pin')});
+ fetch(u('/api/pin')).then(function(r){return r.json()}).then(function(p){pinMode=p.set?'login':'setup';firstPin='';q('pinv').value='';
+ q('pinh').textContent=p.set?'PIN girin':'PIN oluşturun';q('pinp').textContent=p.set?'Aracın sahibinin belirlediği 4 haneli PIN.':'İlk bağlantı: aracınız için 4 haneli bir PIN seçin. Bundan sonra panel her açılışta bu PIN’i soracak.'})}
+function pinGo(){var v=q('pinv').value;if(!/^[0-9]{4}${'$'}/.test(v)){q('pins').textContent='4 rakam girin';return}
+ if(pinMode==='setup'&&!firstPin){firstPin=v;q('pinv').value='';q('pinh').textContent='PIN’i tekrar girin';q('pins').textContent='';return}
+ if(pinMode==='setup'&&firstPin!==v){firstPin='';q('pinv').value='';q('pinh').textContent='PIN oluşturun';q('pins').textContent='İki PIN aynı değil, baştan girin';return}
+ post('/api/pin/'+(pinMode==='setup'?'setup':'login'),JSON.stringify({pin:v}),'application/json').then(function(sess){S=sess.trim();q('pins').textContent='';
+ q('nav').style.display='flex';[].forEach.call(document.querySelectorAll('.tab'),function(t){t.classList.toggle('on',t.id==='foto')});load()}).catch(function(e){q('pinv').value='';firstPin='';if(pinMode==='setup')q('pinh').textContent='PIN oluşturun';q('pins').textContent=e.message})}
 function q(id){return document.getElementById(id)}
 function msg(t){var m=q('msg');m.textContent=t;m.style.display='block';clearTimeout(window._m);window._m=setTimeout(function(){m.style.display='none'},3500)}
-function post(p,body,type){return fetch(u(p),{method:'POST',headers:type?{'Content-Type':type}:{},body:body}).then(function(r){return r.text().then(function(t){if(!r.ok)throw new Error(t);return t})})}
-function get(p){return fetch(u(p)).then(function(r){if(!r.ok)throw new Error('Panel kapanmış. Ünitede yeniden açın.');return r})}
+function post(p,body,type){var h=type?{'Content-Type':type}:{};if(S)h['X-Kokpit-Session']=S;return fetch(u(p),{method:'POST',headers:h,body:body}).then(function(r){return r.text().then(function(t){if(r.status===401){needPin();throw new Error('PIN gerekli')}if(!r.ok)throw new Error(t);return t})})}
+function get(p){return fetch(u(p)).then(function(r){if(r.status===401){needPin();throw new Error('PIN gerekli')}if(!r.ok)throw new Error('Panel kapanmış. Ünitede yeniden açın.');return r})}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
 function fmt(n,d){return Number(n).toFixed(d).replace('.',',')}
 [].forEach.call(document.querySelectorAll('nav button'),function(b){b.onclick=function(){[].forEach.call(document.querySelectorAll('nav button'),function(x){x.classList.toggle('on',x===b)});
@@ -119,7 +132,7 @@ function checkUpd(){post('/api/update/check').then(function(){q('upd').textConte
 function report(){q('rep').style.display='block';q('rt').value='Yükleniyor…';get('/api/report').then(function(r){return r.text()}).then(function(t){q('rt').value=t})}
 function copyRep(){var r=q('rt');r.focus();r.select();r.setSelectionRange(0,r.value.length);var ok=false;try{ok=document.execCommand('copy')}catch(e){}msg(ok?'Kopyalandı ✓':'Metni uzun basıp seçin')}
 function closePanel(){post('/api/close').then(function(){document.body.textContent='Panel kapatıldı.'})}
-load();setInterval(function(){if(q('foto').classList.contains('on'))load()},20000);
+needPin();setInterval(function(){if(S&&q('foto').classList.contains('on'))load()},20000);
 </script></body></html>
 """.trimIndent()
 }
