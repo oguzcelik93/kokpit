@@ -441,4 +441,6 @@
     <string name="window_set">Fotoğraf ayarlandı</string>
     <string name="window_not_image">Kokpit\'in okuyabildiği bir fotoğraf değil</string>
     <string name="window_remove">Fotoğrafı kaldır</string>
+    <string name="window_rotate">Fotoğrafı döndür ↻</string>
+    <string name="window_rotate_help">Her dokunuşta saat yönünde çeyrek tur</string>
 </resources>

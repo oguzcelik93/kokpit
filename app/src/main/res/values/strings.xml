@@ -441,4 +441,6 @@
     <string name="window_set">Photo set</string>
     <string name="window_not_image">Not a photo Kokpit can read</string>
     <string name="window_remove">Remove photo</string>
+    <string name="window_rotate">Rotate photo ↻</string>
+    <string name="window_rotate_help">Quarter turn clockwise per tap</string>
 </resources>

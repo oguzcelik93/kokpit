@@ -40,3 +40,14 @@ class PhotoReceiverTest {
         assertEquals(4, sampleSizeFor(8000, 6000, 1280, 720))
     }
 }
+
+class ExifRotationTest {
+    @org.junit.Test
+    fun phoneOrientations() {
+        org.junit.Assert.assertEquals(90, exifRotation(android.media.ExifInterface.ORIENTATION_ROTATE_90))
+        org.junit.Assert.assertEquals(180, exifRotation(android.media.ExifInterface.ORIENTATION_ROTATE_180))
+        org.junit.Assert.assertEquals(270, exifRotation(android.media.ExifInterface.ORIENTATION_ROTATE_270))
+        org.junit.Assert.assertEquals(0, exifRotation(android.media.ExifInterface.ORIENTATION_NORMAL))
+        org.junit.Assert.assertEquals(0, exifRotation(android.media.ExifInterface.ORIENTATION_UNDEFINED))
+    }
+}

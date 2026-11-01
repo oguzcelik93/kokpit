@@ -3,6 +3,8 @@ package io.github.yorulmazsinan.kokpit.car
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.os.Environment
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -16,6 +18,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** EXIF orientation → degrees to rotate clockwise (phones save portraits sideways and note it here). */
+fun exifRotation(orientation: Int): Int = when (orientation) {
+    ExifInterface.ORIENTATION_ROTATE_90, ExifInterface.ORIENTATION_TRANSPOSE -> 90
+    ExifInterface.ORIENTATION_ROTATE_180, ExifInterface.ORIENTATION_FLIP_VERTICAL -> 180
+    ExifInterface.ORIENTATION_ROTATE_270, ExifInterface.ORIENTATION_TRANSVERSE -> 270
+    else -> 0
+}
 
 /** Largest power-of-two step that keeps the image at least [maxW]×[maxH]: a phone photo never fills 1 GB of RAM. */
 fun sampleSizeFor(width: Int, height: Int, maxW: Int, maxH: Int): Int {
@@ -70,14 +80,30 @@ class WallpaperStore(private val context: Context, scope: CoroutineScope) {
             BitmapFactory.decodeFile(tmp.path, bounds)
             if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return false
             val options = BitmapFactory.Options().apply { inSampleSize = sampleSizeFor(bounds.outWidth, bounds.outHeight, MAX_W, MAX_H) }
-            val bitmap = BitmapFactory.decodeFile(tmp.path, options) ?: return false
-            val scaled = scaleDown(bitmap)
+            val decoded = BitmapFactory.decodeFile(tmp.path, options) ?: return false
+            val degrees = runCatching { exifRotation(ExifInterface(tmp.path).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) }.getOrDefault(0)
+            val scaled = scaleDown(rotate(decoded, degrees))
             file.outputStream().use { scaled.compress(Bitmap.CompressFormat.JPEG, 88, it) }
             _image.value = scaled.asImageBitmap()
             return true
         } finally {
             tmp.delete()
         }
+    }
+
+    /** Turns the saved photo a quarter clockwise, for pictures that carry no orientation. Blocking. */
+    fun rotateQuarter(): Boolean {
+        val bitmap = file.takeIf { it.exists() }?.let { BitmapFactory.decodeFile(it.path) } ?: return false
+        val turned = rotate(bitmap, 90)
+        file.outputStream().use { turned.compress(Bitmap.CompressFormat.JPEG, 88, it) }
+        _image.value = turned.asImageBitmap()
+        return true
+    }
+
+    private fun rotate(bitmap: Bitmap, degrees: Int): Bitmap {
+        if (degrees % 360 == 0) return bitmap
+        val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
     fun clear() {

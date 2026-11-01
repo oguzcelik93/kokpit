@@ -118,6 +118,11 @@ fun WindowScreen(container: AppContainer, onBack: () -> Unit, onPickApp: (DockSl
                 }
             }
             if (image != null) {
+                item {
+                    ListRow(stringResource(R.string.window_rotate), stringResource(R.string.window_rotate_help)) {
+                        scope.launch(Dispatchers.IO) { container.wallpaper.rotateQuarter() }
+                    }
+                }
                 item { ListRow(stringResource(R.string.window_remove), null) { container.wallpaper.clear() } }
             }
         }

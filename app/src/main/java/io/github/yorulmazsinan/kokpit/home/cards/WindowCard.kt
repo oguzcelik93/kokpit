@@ -24,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -56,11 +55,10 @@ fun WindowCard(state: WindowCardState?, onOpen: () -> Unit, onSettings: () -> Un
         Box(Modifier.fillMaxSize()) {
             val image = state?.image
             if (image != null) {
+                // The photo alone, uncovered; a tap still opens the app.
                 Image(image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                // Keep the button readable on any photo.
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.65f))))
             }
-            if (hasApp) {
+            if (hasApp && image == null) {
                 Row(
                     Modifier.align(Alignment.BottomStart).padding(14.dp)
                         .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(50))
