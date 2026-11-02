@@ -14,8 +14,8 @@ android {
         applicationId = "io.github.oguzcelik93.kokpit93.kumanda"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.1.1"
+        versionCode = 4
+        versionName = "1.1.2"
     }
 
     // Same key and same sources as the Kokpit app (see app/build.gradle.kts).
@@ -60,9 +60,10 @@ android {
         }
         release {
             signingConfig = signingConfigs.findByName("release")
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // No R8 here: it removed the constructors ML Kit creates its parts with by reflection
+            // (QR scanner and receipt reader then crash with a null). The app is small anyway.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 
