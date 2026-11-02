@@ -425,7 +425,7 @@
     <string name="window_settings_help">Hız göstergesi yerine tarayıcı düğmesi ve fotoğraf</string>
     <string name="window_empty">Fotoğraf ekleyin ya da tarayıcı seçin — dokunun</string>
     <string name="window_app">Karttaki uygulama</string>
-    <string name="window_app_help">Karta dokununca tam ekran açılır. Kuruluysa Brave kullanılır; başka tarayıcı ya da uygulama için buraya dokunun.</string>
+    <string name="window_app_help">Kartta fotoğraf yokken karta dokununca tam ekran açılır (fotoğraf varken dokunmak bir şey yapmaz). Kuruluysa Brave kullanılır; başka tarayıcı ya da uygulama için buraya dokunun.</string>
     <string name="window_get_brave">Brave\'i kur</string>
     <string name="window_get_brave_help">Play Store\'da Brave\'i açar</string>
     <string name="window_photo">Karttaki fotoğraf</string>

@@ -73,7 +73,16 @@ fun WindowCard(state: WindowCardState?, onOpen: () -> Unit, onSettings: () -> Un
     val shape = RoundedCornerShape(LocalCockpitStyle.current.cardRadius)
     val hasApp = state?.appLabel != null
     Surface(
-        modifier.testTag("window_card").onSizeChanged { onSize(it.width, it.height) }.combinedClickable(onClick = if (hasApp) onOpen else onSettings, onLongClick = onSettings),
+        // With a photo, a tap does nothing (no surprise browser while driving); a long press
+        // opens the photo settings. Without one, a tap opens the app or the settings.
+        modifier.testTag("window_card").onSizeChanged { onSize(it.width, it.height) }.combinedClickable(
+            onClick = when {
+                state?.image != null -> ({})
+                hasApp -> onOpen
+                else -> onSettings
+            },
+            onLongClick = onSettings,
+        ),
         shape = shape,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -81,7 +90,7 @@ fun WindowCard(state: WindowCardState?, onOpen: () -> Unit, onSettings: () -> Un
         Box(Modifier.fillMaxSize()) {
             val image = state?.image
             // The photo fills the card (a portrait one gets a tall card on the home screen),
-            // zoomed and moved as the driver framed it; a tap still opens the app.
+            // zoomed and moved as the driver framed it.
             if (image != null) FramedImage(image, state.framing, Modifier.fillMaxSize())
             if (hasApp && image == null) {
                 Row(

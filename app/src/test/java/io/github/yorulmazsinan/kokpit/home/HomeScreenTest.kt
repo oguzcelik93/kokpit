@@ -151,6 +151,23 @@ class HomeScreenTest {
     }
 
     @Test
+    @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
+    fun tapOnPhotoDoesNotOpenTheBrowser() {
+        var opened = false
+        var settings = false
+        val photo = androidx.compose.ui.graphics.ImageBitmap(40, 30)
+        compose.setContent {
+            KokpitTheme {
+                HomeScreen(base, now, HomeActions(onWindowOpen = { opened = true }, onWindowSettings = { settings = true }),
+                    window = io.github.yorulmazsinan.kokpit.home.cards.WindowCardState(photo, "Brave", null))
+            }
+        }
+        compose.onNodeWithTag("window_card").performClick()
+        assertTrue(!opened)
+        assertTrue(!settings)
+    }
+
+    @Test
     fun emptyWindowCardOpensItsSettings() {
         var settings = false
         compose.setContent { KokpitTheme { HomeScreen(base, now, HomeActions(onWindowSettings = { settings = true })) } }
