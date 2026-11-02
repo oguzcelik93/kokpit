@@ -520,4 +520,6 @@
     <string name="reminders_none">Nothing due soon.</string>
     <string name="driver_profiles">Driver profiles</string>
     <string name="driver_profiles_help">Home/work, photo, music and brightness follow the phone connected over Bluetooth</string>
+    <string name="projection_hotspot_hint">For wireless Android Auto/CarPlay, turn the phone\'s hotspot off: while it is on, the phone can\'t join the unit\'s network.</string>
+    <string name="projection_hotspot_help">Wireless Android Auto/CarPlay: the phone\'s hotspot must be off, Wi-Fi and Bluetooth on. Kokpit doesn\'t pull the unit onto the hotspot while ZLink is in front.</string>
 </resources>

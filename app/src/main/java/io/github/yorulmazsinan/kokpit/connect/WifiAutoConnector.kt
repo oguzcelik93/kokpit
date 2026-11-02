@@ -54,6 +54,8 @@ class WifiAutoConnector(
         }
         val started = clock()
         while (true) {
+            // Wireless Android Auto / CarPlay is starting: leave the Wi-Fi to it.
+            if (PhoneProjection.active(context)) return
             if (runCatching { connectLegacy(wifi, ssid, s.hotspotPassword) }.getOrDefault(false)) return
             val wait = retry.nextAttemptDelay(started, clock()) ?: return
             delay(wait)

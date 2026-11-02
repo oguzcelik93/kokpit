@@ -67,6 +67,7 @@ fun CarPlayScreen(container: AppContainer, onBack: () -> Unit) {
                 ListRow((if (selected) "● " else "") + engine.name, stringResource(kindHelp(engine.kind))) { setTarget(engine.target) }
             }
             item { HelpText(stringResource(R.string.carplay_direct_help)) }
+            item { HelpText(stringResource(R.string.projection_hotspot_help)) }
             current?.let { engine ->
                 val screens = exportedActivities(context.packageManager, engine.packageName)
                 if (screens.isNotEmpty()) {

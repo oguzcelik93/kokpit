@@ -178,6 +178,7 @@ class AppContainer(context: Context) {
             driverProfiles.start(scope)
             // Kumanda's "Bağlan" and "Paylaş → Kokpit" reach the unit through this door.
             phonePanel.startDoor()
+            io.github.yorulmazsinan.kokpit.connect.PhoneProjection.start(appContext, scope) { awake }
             updater.startAuto { settings.settings.value.autoUpdate }
             // A stick left in since boot: look for a newer APK on it too.
             launch(Dispatchers.IO) { runCatching { updater.checkUsb(removableRoots(appContext)) } }

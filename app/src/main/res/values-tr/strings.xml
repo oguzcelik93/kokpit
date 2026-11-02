@@ -520,4 +520,6 @@
     <string name="reminders_none">Yaklaşan bir şey yok.</string>
     <string name="driver_profiles">Sürücü profilleri</string>
     <string name="driver_profiles_help">Ev/İş, fotoğraf, müzik ve parlaklık, Bluetooth\'tan bağlı telefona göre değişir</string>
+    <string name="projection_hotspot_hint">Kablosuz Android Auto/CarPlay için telefonda hotspot\'u kapatın: açıkken telefon ünitenin ağına bağlanamaz.</string>
+    <string name="projection_hotspot_help">Kablosuz Android Auto/CarPlay: telefonda hotspot kapalı, Wi-Fi ve Bluetooth açık olmalı. Kokpit, ZLink öndeyken üniteyi hotspot\'a bağlamaya çalışmaz.</string>
 </resources>
