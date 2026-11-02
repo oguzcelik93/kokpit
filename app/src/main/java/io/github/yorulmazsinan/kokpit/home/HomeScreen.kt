@@ -63,14 +63,16 @@ fun HomeScreen(state: HomeUiState, now: LocalDateTime, actions: HomeActions, sho
                 WindowCard(state = window, onOpen = actions.onWindowOpen, onSettings = actions.onWindowSettings, modifier = m, onSize = actions.onWindowSize)
             }
             if (window?.portrait == true && window.image != null) {
-                // A portrait photo gets a tall frame on the right; music and the heading strip
-                // move into the middle column.
-                clock(Modifier.weight(1.1f).fillMaxHeight())
-                Column(Modifier.weight(0.95f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Dimens.Gap)) {
-                    media(Modifier.weight(1.4f).fillMaxWidth())
+                // A portrait photo gets its own upright frame next to the music; the heading
+                // strip runs across the top, so the frame stays a sensible size.
+                clock(Modifier.weight(1.25f).fillMaxHeight())
+                Column(Modifier.weight(1.55f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Dimens.Gap)) {
                     CompassCard(state.trip, Modifier.weight(0.6f).fillMaxWidth(), onClick = actions.onOpenMaps, shortcuts = actions.car)
+                    Row(Modifier.weight(1.4f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Dimens.Gap)) {
+                        media(Modifier.weight(1f).fillMaxHeight())
+                        photo(Modifier.weight(0.8f).fillMaxHeight())
+                    }
                 }
-                photo(Modifier.weight(0.8f).fillMaxHeight())
             } else {
                 clock(Modifier.weight(1.25f).fillMaxHeight())
                 Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Dimens.Gap)) {
