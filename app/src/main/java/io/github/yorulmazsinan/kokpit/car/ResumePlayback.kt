@@ -50,6 +50,11 @@ class ResumePlayback(
 
     val last: LastSource get() = LastSource.decode(prefs.getString(KEY, null))
 
+    /** Driver profiles: each phone's driver resumes their own music. */
+    fun restore(source: LastSource) {
+        prefs.edit().putString(KEY, source.encode()).apply()
+    }
+
     /** Blocking (vendor binder calls): call off the main thread, while awake. */
     fun sample() {
         val playing = nowPlaying.state.value as? NowPlayingState.Playing

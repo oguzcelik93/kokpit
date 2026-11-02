@@ -50,6 +50,8 @@ fun PhonePanelScreen(panel: PhonePanel, hotspot: LocalHotspot, onBack: () -> Uni
     var problem by remember { mutableStateOf<String?>(null) }
     var noNetwork by remember { mutableStateOf(false) }
     var confirmReset by remember { mutableStateOf(false) }
+    var trusted by remember { mutableStateOf(panel.trustedPhones()) }
+    var forget by remember { mutableStateOf<TrustedPhone?>(null) }
     LaunchedEffect(Unit) { if (panel.status.value == null) noNetwork = panel.open() == null }
 
     fun ownWifi() {
@@ -123,6 +125,12 @@ fun PhonePanelScreen(panel: PhonePanel, hotspot: LocalHotspot, onBack: () -> Uni
             if (s != null && net == null) {
                 item { ListRow(stringResource(R.string.panel_own_wifi), stringResource(R.string.panel_own_wifi_help), onClick = ::ownWifi) }
             }
+            if (s != null && s.bluetooth) item { HelpText(stringResource(R.string.panel_kumanda_connect)) }
+            if (trusted.isNotEmpty()) {
+                item { SectionHeader(stringResource(R.string.panel_trusted)) }
+                item { HelpText(stringResource(R.string.panel_trusted_help)) }
+                trusted.forEach { phone -> item { ListRow(phone.name, phone.address) { forget = phone } } }
+            }
             if (panel.pinSet) {
                 item { ListRow(stringResource(R.string.panel_pin_reset), stringResource(R.string.panel_pin_reset_help)) { confirmReset = true } }
             }
@@ -133,8 +141,17 @@ fun PhonePanelScreen(panel: PhonePanel, hotspot: LocalHotspot, onBack: () -> Uni
             onDismissRequest = { confirmReset = false },
             title = { Text(stringResource(R.string.panel_pin_reset)) },
             text = { Text(stringResource(R.string.panel_pin_reset_confirm)) },
-            confirmButton = { TextButton(onClick = { panel.resetPin(); confirmReset = false }) { Text(stringResource(R.string.recovery_reset_yes)) } },
+            confirmButton = { TextButton(onClick = { panel.resetPin(); trusted = panel.trustedPhones(); confirmReset = false }) { Text(stringResource(R.string.recovery_reset_yes)) } },
             dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    forget?.let { phone ->
+        AlertDialog(
+            onDismissRequest = { forget = null },
+            title = { Text(stringResource(R.string.panel_trusted)) },
+            text = { Text(stringResource(R.string.panel_trusted_forget, phone.name)) },
+            confirmButton = { TextButton(onClick = { panel.forgetPhone(phone.address); trusted = panel.trustedPhones(); forget = null }) { Text(stringResource(R.string.panel_forget_yes)) } },
+            dismissButton = { TextButton(onClick = { forget = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

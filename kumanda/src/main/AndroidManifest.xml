@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Yalnızca telefonun içindeki köprü (127.0.0.1) ve QR okuyucunun bir kerelik inişi için. -->
+    <!-- Telefonun içindeki köprü (127.0.0.1), okuyucu modüllerinin bir kerelik inişi ve paylaşılan
+         kısa harita bağlantısının (maps.app.goo.gl) nereye gittiğine bakmak için. -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Eşleşmiş üniteye bağlanmak. Tarama yok, eşleştirme yok, konum yok. -->
+    <!-- Eşleşmiş üniteye bağlanmak. Tarama yok, eşleştirme yok. -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Yalnızca kullanıcı "Park yeri bildirimi"ni açarsa istenir: kontak kapanınca telefonun konumu. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -22,7 +28,7 @@
         <!-- QR okuyucu modülü uygulama kurulurken insin (ilk okutmada beklemesin). -->
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"
-            android:value="barcode_ui" />
+            android:value="barcode_ui,ocr" />
 
         <activity
             android:name=".KumandaActivity"
@@ -42,5 +48,33 @@
                 <data android:scheme="kokpit" android:host="panel" />
             </intent-filter>
         </activity>
+
+        <!-- Haritalardan yer, galeriden fotoğraf: "Paylaş → Kokpit'e gönder". -->
+        <activity
+            android:name=".ShareActivity"
+            android:exported="true"
+            android:label="@string/share_label"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Material.Dialog.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!-- Ünitenin Bluetooth bağlantısı gelip gidince (kontak): park yeri bildirimi. -->
+        <receiver android:name=".ParkReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
+                <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

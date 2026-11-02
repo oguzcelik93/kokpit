@@ -24,7 +24,8 @@ fun parseRequestLine(line: String): Triple<String, String, String?>? {
 
 /** Constant-time compare, so the token can't be guessed byte by byte. */
 fun tokenMatches(expected: String, given: String?): Boolean {
-    if (given == null || given.length != expected.length) return false
+    // An empty secret (no panel open) matches nothing, not even an empty guess.
+    if (expected.isEmpty() || given == null || given.length != expected.length) return false
     var diff = 0
     for (i in expected.indices) diff = diff or (expected[i].code xor given[i].code)
     return diff == 0

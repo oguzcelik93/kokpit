@@ -170,6 +170,11 @@ fun SettingsScreen(
                     }
                 }
                 item {
+                    ToggleRow(stringResource(R.string.driver_profiles), settings.driverProfiles, stringResource(R.string.driver_profiles_help)) { on ->
+                        update { it.copy(driverProfiles = on) }
+                    }
+                }
+                item {
                     ToggleRow(stringResource(R.string.idle_screen), settings.idleScreen, stringResource(R.string.idle_screen_help)) { on ->
                         update { it.copy(idleScreen = on) }
                     }

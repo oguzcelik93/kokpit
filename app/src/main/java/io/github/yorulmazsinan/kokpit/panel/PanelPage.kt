@@ -1,6 +1,6 @@
 package io.github.yorulmazsinan.kokpit.panel
 
-/** The phone panel (one page, five tabs). [token] is hex only, so it is safe inside the script. */
+/** The phone panel (one page, six tabs). [token] is hex only, so it is safe inside the script. */
 fun panelPage(token: String): String {
     require(token.all { it in '0'..'9' || it in 'a'..'f' })
     return """
@@ -23,23 +23,32 @@ input[type=range]{padding:0}input[type=checkbox]{width:22px;height:22px;margin:0
 .ph.sel{border-color:var(--acc)}.ph img{width:100%;height:110px;object-fit:cover;display:block}.ph .row{display:flex;gap:4px;padding:6px}
 .ph .row button{flex:1;padding:8px 4px;font-size:13px}.row2{display:flex;gap:8px}.row2>*{flex:1}
 .li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}.li button{padding:7px 10px;font-size:13px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pad button{font-size:24px;padding:18px 0}
+#due{margin-top:6px}#due p{margin:2px 0;font-size:14px}#due .od{color:#ff8a80}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}.stats b{display:block;font-size:18px;color:#a9ec62}
 #msg{position:fixed;left:12px;right:12px;bottom:12px;background:#22301a;border:1px solid var(--acc);border-radius:12px;padding:12px;display:none;z-index:3}
 textarea{width:100%;height:50vh;background:#0f130c;color:var(--fg);border:1px solid var(--line);border-radius:10px;font:12px monospace}
 </style></head><body>
-<header><h1>Kokpit paneli</h1><small id="info"></small>
-<nav id="nav" style="display:none"><button data-t="foto" class="on">Fotoğraf</button><button data-t="ayar">Ayarlar</button><button data-t="defter">Defter</button><button data-t="arac">Araç</button><button data-t="sistem">Sistem</button></nav></header>
+<header><h1>Kokpit paneli</h1><small id="info"></small><div id="due"></div>
+<nav id="nav" style="display:none"><button data-t="kumanda" class="on">Kumanda</button><button data-t="foto">Fotoğraf</button><button data-t="ayar">Ayarlar</button><button data-t="defter">Defter</button><button data-t="arac">Araç</button><button data-t="sistem">Sistem</button></nav></header>
 
 <div class="tab on" id="pin"><section><h2 id="pinh">PIN</h2><p class="dim" id="pinp"></p>
 <input id="pinv" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••" style="font-size:28px;letter-spacing:12px;text-align:center">
+<div class="sw" id="remw" style="display:none"><span>Bu telefonu hatırla<br><small class="dim">Bu telefondan bir daha PIN sorulmaz</small></span><input id="rem" type="checkbox" checked></div>
 <button onclick="pinGo()" style="width:100%">Devam</button><p class="dim" id="pins"></p></section></div>
+
+<div class="tab" id="kumanda"><section><h2>Müzik</h2><div class="pad">
+<button class="sec" onclick="media('prev')">⏮</button><button onclick="media('play')">⏯</button><button class="sec" onclick="media('next')">⏭</button>
+<button class="sec" onclick="media('vol_down')">−</button><button class="sec" onclick="media('mute')">🔇</button><button class="sec" onclick="media('vol_up')">+</button></div>
+<p class="dim" id="vol">Ses</p></section>
+<section><h2>Parlaklık</h2><input id="bri" type="range" min="10" max="255"><small class="dim">Kaydırınca ünitede hemen değişir.</small></section></div>
 
 <div class="tab" id="foto"><section><h2>Fotoğraflar</h2>
 <label class="btn" style="display:block;text-align:center">Fotoğraf ekle<input id="up" type="file" accept="image/*" multiple style="display:none"></label>
 <p class="dim" id="upst"></p><div class="grid" id="grid"></div></section></div>
 
 <div class="tab" id="ayar">
-<section><h2>Parlaklık</h2><input id="bri" type="range" min="10" max="255"><small class="dim">Kaydırınca ünitede hemen değişir.</small>
+<section><h2>Parlaklık</h2>
 <div class="sw"><span>Otomatik gece/gündüz</span><input type="checkbox" data-s="autoBrightness"></div>
 <label class="dim">Gündüz seviyesi</label><input type="range" min="10" max="255" data-s="dayBrightness">
 <label class="dim">Gece seviyesi</label><input type="range" min="10" max="255" data-s="nightBrightness">
@@ -56,18 +65,25 @@ textarea{width:100%;height:50vh;background:#0f130c;color:var(--fg);border:1px so
 <div class="sw"><span>Kontak açılınca müziği sürdür</span><input type="checkbox" data-s="autoResume"></div>
 <div class="sw"><span>Kontak açılınca Kokpit öne gelsin</span><input type="checkbox" data-s="wakeToKokpit"></div>
 <div class="sw"><span>Ana ekranı koru</span><input type="checkbox" data-s="keepHome"></div>
-<div class="sw"><span>iPhone takılınca CarPlay</span><input type="checkbox" data-s="autoCarPlayOnUsb"></div></section></div>
+<div class="sw"><span>iPhone takılınca CarPlay</span><input type="checkbox" data-s="autoCarPlayOnUsb"></div>
+<div class="sw"><span>Sürücü profilleri<br><small class="dim">Ev/İş, fotoğraf, müzik ve parlaklık bağlı telefona göre</small></span><input type="checkbox" data-s="driverProfiles"></div></section></div>
 
 <div class="tab" id="defter">
-<section><h2>Yakıt kaydı</h2><input id="km" inputmode="numeric" placeholder="Kilometre sayacı">
+<section><h2>Yakıt kaydı</h2><a class="btn sec" id="fis" href="kumanda://fis" style="display:none;text-align:center;margin-bottom:8px">📷 Fişten doldur</a>
+<input id="km" inputmode="numeric" placeholder="Kilometre sayacı">
 <div class="row2"><input id="lt" inputmode="decimal" placeholder="Litre"><input id="pr" inputmode="decimal" placeholder="Tutar ₺"></div>
-<div class="sw"><span>Depo tam dolduruldu</span><input id="full" type="checkbox" checked></div><br><button onclick="fuel()">Kaydet</button><p class="dim" id="fst"></p>
+<div class="sw"><span>Depo tam dolduruldu</span><input id="full" type="checkbox" checked></div><p class="dim" id="fdate" style="display:none"></p><br><button onclick="fuel()">Kaydet</button><p class="dim" id="fst"></p>
 <div id="fuels"></div></section>
 <section><h2>Yolculuklar</h2><div class="stats" id="tstats"></div><div id="trips"></div></section></div>
 
 <div class="tab" id="arac">
 <section><h2>Ev ve İş</h2><input id="home" placeholder="Ev adresi"><button onclick="place('home')">Evi kaydet</button>
 <input id="work" placeholder="İş adresi" style="margin-top:12px"><button onclick="place('work')">İşi kaydet</button></section>
+<section><h2>Bakım hatırlatmaları</h2><p class="dim">30 gün (yağ için 1.000 km) kala hatırlatılır.</p>
+<label class="dim">Muayene</label><input type="date" data-r="muayene"><label class="dim">Trafik sigortası</label><input type="date" data-r="sigorta">
+<label class="dim">Kasko</label><input type="date" data-r="kasko"><label class="dim">Yağ değişimi tarihi</label><input type="date" data-r="yag">
+<label class="dim" id="oill">Yağ değişimi km</label><input inputmode="numeric" data-r="oilKm">
+<div class="sw"><span>Kışlık/yazlık lastik hatırlat</span><input type="checkbox" data-r="tires"></div><br><button onclick="saveRem()">Kaydet</button></section>
 <section><h2>Park yeri</h2><p class="dim" id="park">—</p><a class="btn" id="parkgo" style="display:none" target="_blank" rel="noopener">Haritada aç</a></section>
 <section><h2>Bluetooth telefonlar</h2><div id="bt"><p class="dim">Yükleniyor…</p></div></section></div>
 
@@ -80,7 +96,7 @@ textarea{width:100%;height:50vh;background:#0f130c;color:var(--fg);border:1px so
 <div id="msg"></div>
 <script>
 var T='$token';
-var S='',pinMode='',firstPin='';
+var S='',pinMode='',firstPin='',KUM=false,fisDate='';
 // Kokpit Kumanda serves this page from the phone itself and carries it over Bluetooth, which
 // is slow: there, big photos are shrunk on the phone first (the unit's screen is far smaller).
 var BT=location.hostname==='127.0.0.1';
@@ -89,14 +105,19 @@ function shrink(f){if(!BT||f.size<1500000)return Promise.resolve(f);return new P
  c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(function(b){ok(b&&b.size<f.size?b:f)},'image/jpeg',0.88)};
  img.onerror=function(){URL.revokeObjectURL(url);ok(f)};img.src=url})}
 function u(p){return p+(p.indexOf('?')<0?'?':'&')+'t='+T+(S?'&s='+S:'')}
+function enter(sess){S=sess.trim();q('pins').textContent='';q('nav').style.display='flex';
+ [].forEach.call(document.querySelectorAll('nav button'),function(x){x.classList.toggle('on',x.dataset.t==='kumanda')});
+ [].forEach.call(document.querySelectorAll('.tab'),function(t){t.classList.toggle('on',t.id==='kumanda')});load();loadMedia()}
 function needPin(){S='';q('nav').style.display='none';[].forEach.call(document.querySelectorAll('.tab'),function(t){t.classList.toggle('on',t.id==='pin')});
- fetch(u('/api/pin')).then(function(r){return r.json()}).then(function(p){pinMode=p.set?'login':'setup';firstPin='';q('pinv').value='';
- q('pinh').textContent=p.set?'PIN girin':'PIN oluşturun';q('pinp').textContent=p.set?'Aracın sahibinin belirlediği 4 haneli PIN.':'İlk bağlantı: aracınız için 4 haneli bir PIN seçin. Bundan sonra panel her açılışta bu PIN’i soracak.'})}
+ fetch(u('/api/pin')).then(function(r){return r.json()}).then(function(p){KUM=!!p.kumanda;q('fis').style.display=KUM?'block':'none';
+ if(p.remembered){q('pinh').textContent='Bağlanıyor…';q('pinp').textContent='Bu telefon hatırlanıyor.';post('/api/pin/device').then(enter).catch(function(){showPin(p)});return}
+ showPin(p)})}
+function showPin(p){q('remw').style.display=KUM?'flex':'none';pinMode=p.set?'login':'setup';firstPin='';q('pinv').value='';
+ q('pinh').textContent=p.set?'PIN girin':'PIN oluşturun';q('pinp').textContent=p.set?'Aracın sahibinin belirlediği 4 haneli PIN.':'İlk bağlantı: aracınız için 4 haneli bir PIN seçin. Bundan sonra panel her açılışta bu PIN’i soracak.'}
 function pinGo(){var v=q('pinv').value;if(!/^[0-9]{4}${'$'}/.test(v)){q('pins').textContent='4 rakam girin';return}
  if(pinMode==='setup'&&!firstPin){firstPin=v;q('pinv').value='';q('pinh').textContent='PIN’i tekrar girin';q('pins').textContent='';return}
  if(pinMode==='setup'&&firstPin!==v){firstPin='';q('pinv').value='';q('pinh').textContent='PIN oluşturun';q('pins').textContent='İki PIN aynı değil, baştan girin';return}
- post('/api/pin/'+(pinMode==='setup'?'setup':'login'),JSON.stringify({pin:v}),'application/json').then(function(sess){S=sess.trim();q('pins').textContent='';
- q('nav').style.display='flex';[].forEach.call(document.querySelectorAll('.tab'),function(t){t.classList.toggle('on',t.id==='foto')});load()}).catch(function(e){q('pinv').value='';firstPin='';if(pinMode==='setup')q('pinh').textContent='PIN oluşturun';q('pins').textContent=e.message})}
+ post('/api/pin/'+(pinMode==='setup'?'setup':'login'),JSON.stringify({pin:v,remember:KUM&&q('rem').checked}),'application/json').then(enter).catch(function(e){q('pinv').value='';firstPin='';if(pinMode==='setup')q('pinh').textContent='PIN oluşturun';q('pins').textContent=e.message})}
 function q(id){return document.getElementById(id)}
 function msg(t){var m=q('msg');m.textContent=t;m.style.display='block';clearTimeout(window._m);window._m=setTimeout(function(){m.style.display='none'},3500)}
 function post(p,body,type){var h=type?{'Content-Type':type}:{};if(S)h['X-Kokpit-Session']=S;return fetch(u(p),{method:'POST',headers:h,body:body}).then(function(r){return r.text().then(function(t){if(r.status===401){needPin();throw new Error('PIN gerekli')}if(!r.ok)throw new Error(t);return t})})}
@@ -104,9 +125,19 @@ function get(p){return fetch(u(p)).then(function(r){if(r.status===401){needPin()
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
 function fmt(n,d){return Number(n).toFixed(d).replace('.',',')}
 [].forEach.call(document.querySelectorAll('nav button'),function(b){b.onclick=function(){[].forEach.call(document.querySelectorAll('nav button'),function(x){x.classList.toggle('on',x===b)});
- [].forEach.call(document.querySelectorAll('.tab'),function(t){t.classList.toggle('on',t.id===b.dataset.t)});({ayar:loadSettings,defter:loadBook,arac:loadCar,sistem:loadSys}[b.dataset.t]||load)()}});
+ [].forEach.call(document.querySelectorAll('.tab'),function(t){t.classList.toggle('on',t.id===b.dataset.t)});({kumanda:loadMedia,ayar:loadSettings,defter:loadBook,arac:loadCar,sistem:loadSys}[b.dataset.t]||load)()}});
+function showDue(list){var d=q('due');d.textContent='';(list||[]).forEach(function(x){d.appendChild(el('p',x.overdue?'od':null,'⚠ '+x.text))})}
+function media(a){post('/api/media',JSON.stringify({action:a}),'application/json').then(function(v){if(v)q('vol').textContent='Ses '+v}).catch(function(e){msg(e.message)})}
+function loadMedia(){get('/api/media').then(function(r){return r.text()}).then(function(v){if(v)q('vol').textContent='Ses '+v}).catch(function(){})}
+function loadRem(){get('/api/reminders').then(function(r){return r.json()}).then(function(r){[].forEach.call(document.querySelectorAll('[data-r]'),function(x){var v=r[x.dataset.r];if(x.type==='checkbox')x.checked=!!v;else x.value=v==null?'':v});
+ q('oill').textContent='Yağ değişimi km'+(r.lastKm?' (şu an: '+r.lastKm+')':'');showDue(r.due)}).catch(function(e){msg(e.message)})}
+function saveRem(){var o={};[].forEach.call(document.querySelectorAll('[data-r]'),function(x){o[x.dataset.r]=x.type==='checkbox'?x.checked:x.value});
+ post('/api/reminders',JSON.stringify(o),'application/json').then(function(){msg('Kaydedildi ✓');loadRem()}).catch(function(e){msg(e.message)})}
+function kumandaFis(f){if(f.error){msg(f.error);return}if(f.liters)q('lt').value=f.liters;if(f.price)q('pr').value=f.price;fisDate=f.date||'';
+ var d=q('fdate');d.style.display=fisDate?'block':'none';d.textContent=fisDate?'Fiş tarihi: '+fisDate.split('-').reverse().join('.'):'';
+ msg(f.liters||f.price?'Fişten dolduruldu — kontrol edip kilometreyi yazın':'Fişte litre/tutar bulunamadı, elle yazın')}
 function load(){get('/api/state').then(function(r){return r.json()}).then(function(s){
- q('info').textContent='Kokpit '+s.version+' · '+s.time.replace('T',' ');
+ q('info').textContent='Kokpit '+s.version+' · '+s.time.replace('T',' ');showDue(s.due);
  q('km').placeholder='Kilometre sayacı'+(s.lastKm?' (son: '+s.lastKm+')':'');
  if(!q('home').value)q('home').value=s.home||'';if(!q('work').value)q('work').value=s.work||'';
  var g=q('grid');g.textContent='';if(!s.photos.length)g.appendChild(el('p','dim','Henüz fotoğraf yok.'));
@@ -121,8 +152,8 @@ function setS(k,v){var o={};o[k]=v;post('/api/settings',JSON.stringify(o),'appli
 [].forEach.call(document.querySelectorAll('[data-s]'),function(x){x.onchange=function(){var v=x.type==='checkbox'?x.checked:(x.type==='range'||x.dataset.s==='idleMinutes'?Number(x.value):x.value);setS(x.dataset.s,v)}});
 function loadSettings(){get('/api/settings').then(function(r){return r.json()}).then(function(s){[].forEach.call(document.querySelectorAll('[data-s]'),function(x){var v=s[x.dataset.s];if(x.type==='checkbox')x.checked=!!v;else x.value=v})}).catch(function(e){msg(e.message)})}
 var bt;q('bri').oninput=function(){clearTimeout(bt);var v=Number(q('bri').value);bt=setTimeout(function(){post('/api/brightness',JSON.stringify({value:v}),'application/json').catch(function(e){msg(e.message)})},150)};
-function fuel(){var b=JSON.stringify({km:q('km').value,liters:q('lt').value,price:q('pr').value,full:q('full').checked});
- post('/api/fuel',b,'application/json').then(function(){q('fst').textContent='Kaydedildi ✓';['km','lt','pr'].forEach(function(x){q(x).value=''});loadBook();load()}).catch(function(e){q('fst').textContent=e.message})}
+function fuel(){var b=JSON.stringify({km:q('km').value,liters:q('lt').value,price:q('pr').value,full:q('full').checked,date:fisDate});
+ post('/api/fuel',b,'application/json').then(function(){q('fst').textContent='Kaydedildi ✓';['km','lt','pr'].forEach(function(x){q(x).value=''});fisDate='';q('fdate').style.display='none';loadBook();load()}).catch(function(e){q('fst').textContent=e.message})}
 function loadBook(){get('/api/fuel').then(function(r){return r.json()}).then(function(list){var d=q('fuels');d.textContent='';list.slice(0,30).forEach(function(f){var li=el('div','li');
  li.appendChild(el('span',null,f.date+' · '+f.km+' km · '+fmt(f.liters,2)+' L · '+fmt(f.price,2)+' ₺'+(f.full?'':' · kısmi')));var x=el('button','del','Sil');
  x.onclick=function(){if(confirm('Bu yakıt kaydı silinsin mi?'))post('/api/fuel/'+f.time+'/delete').then(loadBook).catch(function(e){msg(e.message)})};li.appendChild(x);d.appendChild(li)})});
@@ -130,7 +161,7 @@ function loadBook(){get('/api/fuel').then(function(r){return r.json()}).then(fun
  var d=q('trips');d.textContent='';t.trips.forEach(function(x){var li=el('div','li');li.appendChild(el('span',null,x.when.replace('T',' ').slice(0,16)+' · '+fmt(x.km,1)+' km · '+x.minutes+' dk'));
  var b=el('button','del','Sil');b.onclick=function(){if(confirm('Bu yolculuk silinsin mi?'))post('/api/trips/'+x.start+'/delete').then(loadBook).catch(function(e){msg(e.message)})};li.appendChild(b);d.appendChild(li)})}).catch(function(e){msg(e.message)})}
 function place(k){post('/api/place',JSON.stringify({kind:k,address:q(k).value}),'application/json').then(function(){msg(k==='home'?'Ev kaydedildi ✓':'İş kaydedildi ✓')}).catch(function(e){msg(e.message)})}
-function loadCar(){get('/api/park').then(function(r){return r.json()}).then(function(p){if(p.link){q('park').textContent='Son park: '+p.time.replace('T',' ');var a=q('parkgo');a.href=p.link;a.style.display='inline-block'}else q('park').textContent='Henüz kayıt yok.'});
+function loadCar(){loadRem();get('/api/park').then(function(r){return r.json()}).then(function(p){if(p.link){q('park').textContent='Son park: '+p.time.replace('T',' ');var a=q('parkgo');a.href=p.link;a.style.display='inline-block'}else q('park').textContent='Henüz kayıt yok.'});
  get('/api/bt').then(function(r){return r.json()}).then(function(list){var d=q('bt');d.textContent='';if(!list.length)d.appendChild(el('p','dim','Android’in gördüğü eşleşmiş telefon yok.'));
  list.forEach(function(p){var li=el('div','li');li.appendChild(el('span',null,(p.connected?'● ':'')+p.name));if(!p.connected){var b=el('button',null,'Bağlan');b.onclick=function(){b.textContent='Bağlanıyor…';
  post('/api/bt/switch',JSON.stringify({address:p.address}),'application/json').then(function(){msg(p.name+' bağlandı ✓');loadCar()}).catch(function(e){msg(e.message);loadCar()})};li.appendChild(b)}d.appendChild(li)})}).catch(function(e){msg(e.message)})}

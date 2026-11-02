@@ -92,10 +92,33 @@ panel yalnızca ünitede biri açınca çalışır; QR her açılışta yeni bir
 ardından araç sahibinin PIN'i gerekir (5 yanlış denemede giderek uzayan kilit, PIN yalnızca
 ünitede sıfırlanır); panel 15 dakika boşta kalınca ya da 1 saat dolunca kapanır ve açıkken
 ünitede uyarı görünür; yalnızca sabit işlem listesi vardır (uygulama kurma, kabuk komutu,
-sistem ayarı, dosya gezme yok). Bluetooth tarafında ünite yalnızca panel açıkken ve
-yalnızca **güvenli RFCOMM** ile dinler: sadece eşleşmiş telefonlar bağlanabilir, bağlantı
-şifrelidir. Kumanda kendi başına hiçbir şey yapamaz; telefonda yalnızca 127.0.0.1'i
-dinleyen küçük bir köprüyle panel sayfasını ünitenin sunduğu gibi gösterir.
+sistem ayarı, dosya gezme yok). Bluetooth tarafında ünite yalnızca **güvenli RFCOMM** ile
+dinler: sadece eşleşmiş telefonlar bağlanabilir, bağlantı şifrelidir. Panel kapalıyken bu
+kapı yalnızca iki şey alır: "Bağlan" isteği (ünitede **İzin ver**'e dokunulmadan hiçbir şey
+açılmaz) ve hatırlanan telefonun paylaştığı rota/fotoğraf. Kumanda kendi başına hiçbir şey
+yapamaz; telefonda yalnızca 127.0.0.1'i dinleyen küçük bir köprüyle panel sayfasını
+ünitenin sunduğu gibi gösterir.
+
+**Kumanda 1.1 ile gelenler (Kokpit 0.16):**
+- **Bağlan (QR'sız):** bir kez QR ile bağlandıktan sonra Kumanda üniteyi hatırlar.
+  "Bağlan"a dokunun, ünitede "… bağlanmak istiyor · İzin ver" çıkar; tek dokunuş yeter.
+- **Bu telefonu hatırla:** PIN ekranındaki kutu işaretliyse o telefon bir daha PIN girmez
+  (yalnızca Bluetooth'tan ve yalnızca o telefonun kendi bağlantısından; anahtarın kendisi
+  ünitede değil, özeti tutulur). Yeni bir telefon her zaman PIN'le başlar. Ünitede
+  Telefondan yönet → Hatırlanan telefonlar'dan tek tek unutulur; PIN sıfırlanınca hepsi unutulur.
+- **Paylaş → Kokpit'e gönder:** Google Haritalar/Waze/Yandex'ten bir yer ünitede "Yola çık"
+  diye bekler; galeriden fotoğraflar albüme düşer (telefonda küçültülüp gönderilir).
+- **Kumanda sekmesi:** yolcu için ses, önceki/sonraki parça, oynat/duraklat ve parlaklık.
+- **Fişten doldur:** yakıt fişi telefonda okunur (ML Kit, internetsiz); litre, tutar ve
+  tarih forma gelir, siz kilometreyi yazıp kaydedersiniz.
+- **Arabam nerede?** (isteğe bağlı): kontak kapanıp telefonun üniteyle bağlantısı kopunca
+  telefon kendi konumunu not eder ve "Aracınız burada park edildi · Haritada aç" bildirimi
+  gösterir. Ünitenin GPS'i fix almadığı için konum telefondan alınır ve telefonda kalır.
+- **Sürücü profilleri:** Ev/İş, kart fotoğrafı, müziğin kaldığı yer ve parlaklık,
+  Bluetooth'tan bağlı telefona göre değişir (Ayarlar → Araç ve kontak).
+- **Bakım hatırlatmaları:** muayene, sigorta, kasko, yağ değişimi (tarih ve km), kışlık/yazlık
+  lastik. Araç defteri → Bakım'da ya da paneldeki Araç sekmesinde girilir; 30 gün (yağ için
+  1.000 km) kala ana ekranda ve panelde görünür. Km yakıt defterindeki son kayıttan alınır.
 
 Bluetooth Wi-Fi'dan yavaştır: Kumanda büyük fotoğrafları göndermeden önce telefonda
 küçültür (en uzun kenar 1920 px); karşılama videosu yüklemek birkaç dakika sürebilir.

@@ -11,6 +11,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -249,6 +250,7 @@ object Routes {
     const val RECOVERY = "recovery"
     const val PARKING = "parking"
     const val FUEL = "fuel"
+    const val SERVICE = "service"
     const val PLACES = "places"
     const val UPDATE = "update"
     const val BT_PHONES = "bt-phones"
@@ -353,6 +355,7 @@ private fun KokpitShell(container: AppContainer, homeState: HomeUiState) {
         if (nightPanel) NightPanel { container.nightPanel.value = false }
         val brightness by container.brightnessPanel.collectAsStateWithLifecycle()
         if (brightness) BrightnessPanel(onDismiss = { container.brightnessPanel.value = false })
+        PhoneRequests(container, homeState.dock[DockSlot.MAPS])
         val update by container.updater.state.collectAsStateWithLifecycle()
         // While the phone panel is open, say so (and offer to close it) on the home screen.
         val panelStatus by container.phonePanel.status.collectAsStateWithLifecycle()
@@ -368,6 +371,18 @@ private fun KokpitShell(container: AppContainer, homeState: HomeUiState) {
         } else if (route == Routes.HOME && !speedUpSeen) {
             InfoPill(androidx.compose.ui.res.stringResource(R.string.speedup_pill), Modifier.align(Alignment.TopCenter)) {
                 nav.navigate(Routes.PERFORMANCE) { launchSingleTop = true }
+            }
+        } else if (route == Routes.HOME) {
+            // Maintenance due soon: once a day, until opened.
+            val reminders by container.reminders.reminders.collectAsStateWithLifecycle()
+            val fuel by container.car.fuel.collectAsStateWithLifecycle()
+            val today = io.github.yorulmazsinan.kokpit.time.TrueTime.date()
+            val due = remember(reminders, fuel, today) { io.github.yorulmazsinan.kokpit.car.dueReminders(reminders, today, fuel.maxOfOrNull { it.odometerKm }) }
+            if (due.isNotEmpty() && !remember(route, today) { container.reminders.seenToday(today) }) {
+                InfoPill(androidx.compose.ui.res.stringResource(R.string.reminder_due_pill, due.first().text), Modifier.align(Alignment.TopCenter)) {
+                    container.reminders.markSeen(today)
+                    nav.navigate(Routes.SERVICE) { launchSingleTop = true }
+                }
             }
         }
         if (idle) {
@@ -451,7 +466,8 @@ private fun KokpitNavHost(
         composable(Routes.BT_PHONES) { io.github.yorulmazsinan.kokpit.connect.BtPhonesScreen(container.btConnect, onBack = { nav.popBackStack() }) }
         composable(Routes.UPDATE) { UpdateScreen(container, onBack = { nav.popBackStack() }) }
         composable(Routes.PARKING) { ParkingScreen(container.car, container.drive::lastPosition, onBack = { nav.popBackStack() }) }
-        composable(Routes.FUEL) { LogbookScreen(container.car, container.trips, onBack = { nav.popBackStack() }) }
+        composable(Routes.FUEL) { LogbookScreen(container.car, container.trips, container.reminders, onBack = { nav.popBackStack() }) }
+        composable(Routes.SERVICE) { LogbookScreen(container.car, container.trips, container.reminders, onBack = { nav.popBackStack() }, initial = io.github.yorulmazsinan.kokpit.car.LogbookTab.SERVICE) }
         composable(Routes.PLACES) {
             PlacesScreen(
                 container.car,
@@ -622,5 +638,59 @@ private fun KokpitNavHost(
             )
         }
         composable(Routes.DIAGNOSTICS) { DiagnosticsScreen(onBack = { nav.popBackStack() }) }
+    }
+}
+
+/**
+ * What a phone asks of the unit through Kokpit Kumanda: "Bağlan" (only "İzin ver" here opens
+ * the panel for it) and a route shared from its maps app (one tap starts navigation).
+ */
+@Composable
+private fun PhoneRequests(container: AppContainer, mapsTarget: String?) {
+    val context = LocalContext.current
+    val knock by container.phonePanel.knock.collectAsStateWithLifecycle()
+    knock?.let { k ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = {},
+            title = { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.knock_title)) },
+            text = {
+                androidx.compose.material3.Text(
+                    androidx.compose.ui.res.stringResource(if (k.remembered) R.string.knock_text_remembered else R.string.knock_text, k.peer.name),
+                    style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.Button(onClick = { container.phonePanel.answerKnock(true) }, modifier = Modifier.heightIn(min = 56.dp)) {
+                    androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.knock_allow))
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { container.phonePanel.answerKnock(false) }, modifier = Modifier.heightIn(min = 56.dp)) {
+                    androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.knock_deny))
+                }
+            },
+        )
+    }
+    val route by container.phonePanel.route.collectAsStateWithLifecycle()
+    route?.let { r ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { container.phonePanel.clearRoute() },
+            title = { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.route_title)) },
+            text = { androidx.compose.material3.Text(r.label, style = androidx.compose.material3.MaterialTheme.typography.titleLarge) },
+            confirmButton = {
+                androidx.compose.material3.Button(onClick = {
+                    container.phonePanel.clearRoute()
+                    val place = io.github.yorulmazsinan.kokpit.car.Place(r.lat, r.lon, r.label.takeIf { r.lat == null })
+                    io.github.yorulmazsinan.kokpit.car.navigateToPlace(context, place, r.label, mapsTarget)
+                }, modifier = Modifier.heightIn(min = 56.dp)) {
+                    androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.route_go))
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { container.phonePanel.clearRoute() }, modifier = Modifier.heightIn(min = 56.dp)) {
+                    androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.route_dismiss))
+                }
+            },
+        )
     }
 }

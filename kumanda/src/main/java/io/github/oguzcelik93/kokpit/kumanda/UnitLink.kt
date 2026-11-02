@@ -27,6 +27,8 @@ class UnitLink(context: Context) {
         context.applicationContext.getSystemService(BluetoothManager::class.java)?.adapter
     }.getOrNull()
     private val prefs = context.applicationContext.getSharedPreferences("unit", Context.MODE_PRIVATE)
+    /** Keys from units that chose to remember this phone (only the unit can hand one out). */
+    private val keys = context.applicationContext.getSharedPreferences("unit_keys", Context.MODE_PRIVATE)
     private val uuid = UUID.fromString(PANEL_BT_UUID)
 
     private var device: BluetoothDevice? = null
@@ -35,6 +37,38 @@ class UnitLink(context: Context) {
     private var output: OutputStream? = null
 
     val hasBluetooth: Boolean get() = adapter != null
+
+    /** The unit this phone last connected to (for "Bağlan" without a QR), or null. */
+    val lastUnit: String? get() = prefs.getString(KEY_LAST, null)
+
+    /** Whether the last unit remembers this phone (it gave us a key). */
+    val remembered: Boolean get() = lastUnit?.let { keys.contains(it) } == true
+
+    /**
+     * "Bağlan": asks the unit to open the panel for this phone. The unit shows "İzin ver" and
+     * this waits (up to a minute) for the tap there; returns the panel's one-time token.
+     */
+    fun knock(): String {
+        val (code, body) = request("POST", "/api/knock", null, null)
+        if (code != 200) throw LinkException(body.ifBlank { "Ünite izin vermedi." })
+        return body.trim().takeIf { t -> t.length == 32 && t.all { it in '0'..'9' || it in 'a'..'f' } }
+            ?: throw LinkException("Ünite beklenmedik bir yanıt verdi.")
+    }
+
+    /** One request with a small body; returns (status code, text). For shares and "Bağlan". */
+    fun request(method: String, path: String, body: ByteArray?, type: String?): Pair<Int, String> {
+        val length = body?.size ?: 0
+        val head = buildString {
+            append("$method $path HTTP/1.1\r\nHost: kokpit\r\n")
+            if (type != null) append("Content-Type: $type\r\n")
+            append("Content-Length: $length\r\n\r\n")
+        }
+        val out = java.io.ByteArrayOutputStream()
+        exchange(head.toByteArray(Charsets.ISO_8859_1), (body ?: ByteArray(0)).inputStream(), length.toLong(), out, retryable = body == null && method == "GET")
+        val text = out.toString("UTF-8")
+        val code = text.substringAfter(' ').substringBefore(' ').toIntOrNull() ?: 0
+        return code to text.substringAfter("\r\n\r\n", "")
+    }
     val isEnabled: Boolean get() = runCatching { adapter?.isEnabled == true }.getOrDefault(false)
 
     /** Finds the unit among the paired devices and connects; returns its name. Slow: call off the main thread. */
@@ -97,11 +131,14 @@ class UnitLink(context: Context) {
                 }
                 val out = output!!
                 val inp = input!!
-                out.write(head)
+                out.write(withDeviceKey(head, device?.address?.let { keys.getString(it, null) }))
                 if (bodyLength > 0 && !copyExactly(body, out, bodyLength)) throw IOException("istek yarım kaldı")
                 out.flush()
-                val responseHead = readHttpHead(inp) ?: throw IOException("yanıt yok")
-                val length = contentLength(responseHead) ?: throw IOException("bozuk yanıt")
+                val rawHead = readHttpHead(inp) ?: throw IOException("yanıt yok")
+                val length = contentLength(rawHead) ?: throw IOException("bozuk yanıt")
+                // A new key ("Bu telefonu hatırla") is kept here and never reaches the page.
+                val (responseHead, newKey) = takeDeviceKey(rawHead)
+                if (newKey != null) device?.address?.let { keys.edit().putString(it, newKey).apply() }
                 // The WebView may have gone away; the unit's response is still read to the end.
                 val sink = ForgivingOutput(client)
                 sink.write(responseHead.toByteArray(Charsets.ISO_8859_1))
@@ -126,6 +163,11 @@ class UnitLink(context: Context) {
     fun close() {
         dropSocket()
         device = null
+    }
+
+    /** Forget the unit's key (it was forgotten on the unit, or the PIN was reset there). */
+    fun forgetKey() {
+        lastUnit?.let { keys.edit().remove(it).apply() }
     }
 
     private companion object {

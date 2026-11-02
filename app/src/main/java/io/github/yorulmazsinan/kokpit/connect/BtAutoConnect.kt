@@ -133,6 +133,11 @@ class BtAutoConnect(private val context: Context, private val scope: CoroutineSc
         any
     }
 
+    /** Phones connected right now (for driver profiles). */
+    fun connectedPhones(): Set<String> = if (adapter == null || !hasPermission()) emptySet() else connectedAddresses()
+
+    fun nameFor(address: String): String = runCatching { nameOf(address) }.getOrDefault(address)
+
     private fun connectedAddresses(): Set<String> =
         proxies.values.flatMap { runCatching { it.connectedDevices }.getOrDefault(emptyList()) }.mapTo(mutableSetOf()) { it.address }
 

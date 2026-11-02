@@ -111,8 +111,13 @@ class AppContainer(context: Context) {
     val wallpaper = WallpaperStore(appContext, scope)
     val localHotspot by lazy { io.github.yorulmazsinan.kokpit.panel.LocalHotspot(appContext) }
     val phonePanel by lazy {
-        io.github.yorulmazsinan.kokpit.panel.PhonePanel(appContext, this).also { it.onClosed = { localHotspot.stop() } }
+        io.github.yorulmazsinan.kokpit.panel.PhonePanel(appContext, this).also {
+            it.onClosed = { localHotspot.stop() }
+            it.onAttention = { MainActivity.bringToFront(appContext) }
+        }
     }
+    val reminders = io.github.yorulmazsinan.kokpit.car.ReminderStore(appContext)
+    private val driverProfiles = io.github.yorulmazsinan.kokpit.car.DriverProfiles(this)
     val resume = ResumePlayback(appContext, nowPlaying, vendorModes, btMusic)
 
     /** False between ignition off and on; nothing is sampled while the unit sleeps. */
@@ -169,6 +174,9 @@ class AppContainer(context: Context) {
             callMonitor.start()
             nowPlaying.refreshAccess()
             btConnect.start()
+            driverProfiles.start(scope)
+            // Kumanda's "Bağlan" and "Paylaş → Kokpit" reach the unit through this door.
+            phonePanel.startDoor()
             updater.startAuto { settings.settings.value.autoUpdate }
             // A stick left in since boot: look for a newer APK on it too.
             launch(Dispatchers.IO) { runCatching { updater.checkUsb(removableRoots(appContext)) } }

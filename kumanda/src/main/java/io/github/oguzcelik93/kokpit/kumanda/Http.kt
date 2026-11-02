@@ -65,3 +65,31 @@ fun writeSimpleReply(out: OutputStream, code: Int, text: String) {
     out.write(body)
     out.flush()
 }
+
+/** The header a remembered phone's key travels in (the unit's DEVICE_KEY_HEADER). */
+const val DEVICE_KEY_HEADER = "X-Kokpit-Device-Key"
+
+private fun isKey(text: String) = text.length == 64 && text.all { it in '0'..'9' || it in 'a'..'f' }
+
+/**
+ * The request [head] as sent to the unit: any device-key header from the page is dropped,
+ * and this phone's [key] for the unit (if it has one) is added.
+ */
+fun withDeviceKey(head: ByteArray, key: String?): ByteArray {
+    val text = String(head, Charsets.ISO_8859_1)
+    val lines = text.removeSuffix("\r\n\r\n").split("\r\n")
+        .filterNot { it.substringBefore(':').trim().equals(DEVICE_KEY_HEADER, ignoreCase = true) }
+    val extra = if (key != null && isKey(key)) listOf("$DEVICE_KEY_HEADER: $key") else emptyList()
+    return ((lines + extra).joinToString("\r\n") + "\r\n\r\n").toByteArray(Charsets.ISO_8859_1)
+}
+
+/** Takes a new device key out of the unit's response head: (head without it, key or null). */
+fun takeDeviceKey(head: String): Pair<String, String?> {
+    var key: String? = null
+    val kept = head.removeSuffix("\r\n\r\n").split("\r\n").filter { line ->
+        val isIt = line.substringBefore(':').trim().equals(DEVICE_KEY_HEADER, ignoreCase = true) && ':' in line
+        if (isIt) key = line.substringAfter(':').trim().takeIf(::isKey)
+        !isIt
+    }
+    return (kept.joinToString("\r\n") + "\r\n\r\n") to key
+}

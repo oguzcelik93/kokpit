@@ -15,11 +15,15 @@ import java.util.concurrent.CopyOnWriteArraySet
 /** At most this many phones on the panel's Bluetooth service at once (we have two). */
 private const val MAX_LINKS = 3
 
+/** The paired phone at the other end of a link: its Bluetooth address and name. */
+data class Peer(val address: String, val name: String)
+
 /**
  * The panel's second door, for Kokpit Kumanda: a *secure* RFCOMM service, so only phones
- * already paired with the unit can connect and the link is encrypted. It listens only while
- * the panel is open and carries exactly the same requests as the Wi-Fi panel — the QR's
- * token, the PIN, the session and the time limits are all checked by [PhonePanel], not here.
+ * already paired with the unit can connect and the link is encrypted. It stays open while
+ * Kokpit runs, but with the panel closed it only takes a connection request (which needs a
+ * tap on the unit) and a remembered phone's shares; the token, PIN, session, time limits and
+ * what each request may do are all checked by [PhonePanel], not here.
  */
 @SuppressLint("MissingPermission")
 class PanelBluetooth(context: Context) {
@@ -34,8 +38,12 @@ class PanelBluetooth(context: Context) {
     class Server internal constructor(private val socket: BluetoothServerSocket, val name: String?) {
         private val links = CopyOnWriteArraySet<BluetoothSocket>()
 
+        /** False once the listener stopped (closed, or Bluetooth went off). */
+        @Volatile var running = true
+            private set
+
         /** Accepts phones until [close]; each link runs [onLink] on its own thread. */
-        fun serve(onLink: (InputStream, OutputStream) -> Unit) {
+        fun serve(onLink: (Peer?, InputStream, OutputStream) -> Unit) {
             Thread {
                 while (true) {
                     val s = runCatching { socket.accept() }.getOrNull() ?: break
@@ -43,7 +51,10 @@ class PanelBluetooth(context: Context) {
                     links += s
                     Thread {
                         try {
-                            onLink(BufferedInputStream(s.inputStream), s.outputStream)
+                            val peer = runCatching { s.remoteDevice }.getOrNull()?.let { d ->
+                                Peer(d.address, runCatching { d.name }.getOrNull() ?: d.address)
+                            }
+                            onLink(peer, BufferedInputStream(s.inputStream), s.outputStream)
                         } catch (_: Exception) {
                         } finally {
                             links -= s
@@ -51,11 +62,13 @@ class PanelBluetooth(context: Context) {
                         }
                     }.apply { isDaemon = true; name = "kokpit-panel-bt-link" }.start()
                 }
+                running = false
             }.apply { isDaemon = true; name = "kokpit-panel-bt" }.start()
         }
 
         /** Stops listening and drops every connected phone. */
         fun close() {
+            running = false
             runCatching { socket.close() }
             links.forEach { runCatching { it.close() } }
             links.clear()

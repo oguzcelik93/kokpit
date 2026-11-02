@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Kokpit Kumanda</string>
-    <string name="steps">1. Ünitede Ayarlar → \"Telefondan yönet\"e basın.\n2. Aşağıdaki düğmeye basıp ünitedeki QR\'ı okutun.\n3. PIN\'inizi girin. Panel açılır.</string>
+    <string name="steps">İlk kez: ünitede Ayarlar → \"Telefondan yönet\"e basıp QR\'ı okutun ve PIN\'i girin (\"Bu telefonu hatırla\" işaretli kalsın).
+Sonra: \"Bağlan\"a dokunun, ünitede \"İzin ver\"e basın. QR da PIN de gerekmez.</string>
     <string name="scan">QR\'ı okut</string>
-    <string name="note">Wi-Fi gerekmez: telefon üniteye Bluetooth ile bağlanır. Telefonun üniteyle Bluetooth\'ta eşleşmiş olması yeterli. Panel ünitede 15 dakika kullanılmazsa ya da 1 saat dolunca kapanır; tekrar açmak için QR\'ı yeniden okutun.</string>
+    <string name="note">Wi-Fi gerekmez: telefon üniteye Bluetooth ile bağlanır. Haritalardan bir yeri ya da galeriden fotoğrafı \"Paylaş → Kokpit Kumanda\" ile üniteye gönderebilirsiniz (hatırlanan telefonlar). Panel ünitede 15 dakika kullanılmazsa ya da 1 saat dolunca kapanır.</string>
     <string name="connecting">Üniteye bağlanılıyor…</string>
     <string name="connected">%1$s ile bağlandı</string>
     <string name="closed">Panelden çıkıldı. Tekrar açmak için QR\'ı okutun.</string>
@@ -13,4 +14,26 @@
     <string name="bt_off">Telefonun Bluetooth\'unu açın, sonra QR\'ı tekrar okutun.</string>
     <string name="need_permission">Bluetooth izni olmadan üniteye bağlanılamaz. İzin verip QR\'ı tekrar okutun.</string>
     <string name="scanner_failed">QR okuyucu açılamadı. Google Play Hizmetleri güncel mi, internet var mı? (Okuyucu ilk kullanımda bir kez iner.)</string>
+    <string name="knock">Bağlan</string>
+    <string name="knock_waiting">%1$s ekranında \"İzin ver\"e dokunun…</string>
+    <string name="receipt_failed">Fiş okunamadı. Litre ve tutarı elle yazın.</string>
+    <string name="park_where">Arabam nerede? · %1$s · Haritada aç</string>
+    <string name="park_off">Park yeri bildirimi: Kapalı</string>
+    <string name="park_on">Park yeri bildirimi: Açık</string>
+    <string name="park_needs_always">Park yeri bildirimi: konum izni \"Her zaman izin ver\" olmalı</string>
+    <string name="park_always_help">Kontak kapanınca Kumanda kapalıyken de park yerini not edebilmek için konum izninde \"Her zaman izin ver\"i seçin. Konum yalnızca bu telefonda kalır.</string>
+    <string name="park_channel">Park yeri</string>
+    <string name="park_title">Aracınız burada park edildi</string>
+    <string name="park_text">%1$s · Haritada açmak için dokunun</string>
+    <string name="park_open">Haritada aç</string>
+    <string name="share_label">Kokpit\'e gönder</string>
+    <string name="share_sending">Kokpit\'e gönderiliyor…</string>
+    <string name="share_not_remembered">Bu telefon ünitede hatırlanmıyor. Kokpit Kumanda\'da \"Bağlan\" (ya da QR) ile bağlanıp PIN\'i girerken \"Bu telefonu hatırla\"yı işaretleyin.</string>
+    <string name="share_no_place">Bu paylaşımda bir yer bulunamadı.</string>
+    <string name="share_route_done">Rota ünitede hazır: %1$s
+Ünitede \"Yola çık\"a dokunun.</string>
+    <string name="share_no_photo">Fotoğraf okunamadı.</string>
+    <string name="share_photo_progress">Fotoğraf gönderiliyor %1$d/%2$d…</string>
+    <string name="share_photo_done">%1$d fotoğraf albüme eklendi.</string>
+    <string name="share_failed">Gönderilemedi. Ünite açık mı, Bluetooth yakın mı?</string>
 </resources>

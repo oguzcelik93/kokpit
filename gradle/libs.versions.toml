@@ -17,6 +17,8 @@ profileinstaller = "1.4.1"
 zxing = "3.5.3"
 dadb = "1.2.10"
 playCodeScanner = "16.1.0"
+playTextRecognition = "19.0.1"
+playDocumentScanner = "16.0.0"
 
 [libraries]
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -50,6 +52,8 @@ zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" 
 dadb = { group = "dev.mobile", name = "dadb", version.ref = "dadb" }
 
 play-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "playCodeScanner" }
+play-text-recognition = { group = "com.google.android.gms", name = "play-services-mlkit-text-recognition", version.ref = "playTextRecognition" }
+play-document-scanner = { group = "com.google.android.gms", name = "play-services-mlkit-document-scanner", version.ref = "playDocumentScanner" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

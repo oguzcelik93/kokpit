@@ -14,8 +14,8 @@ android {
         applicationId = "io.github.oguzcelik93.kokpit93.kumanda"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
     }
 
     // Same key and same sources as the Kokpit app (see app/build.gradle.kts).
@@ -74,5 +74,7 @@ android {
 
 dependencies {
     implementation(libs.play.code.scanner)
+    implementation(libs.play.text.recognition)
+    implementation(libs.play.document.scanner)
     testImplementation(libs.junit)
 }

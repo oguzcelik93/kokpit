@@ -12,9 +12,11 @@ import io.github.yorulmazsinan.kokpit.dock.parseDockTarget
  * Starts navigation to home or work in the maps app on the Maps button (Google Maps, Waze,
  * Yandex), falling back to any app that understands `geo:`. False when the place is unset.
  */
-fun navigateTo(context: Context, container: AppContainer, kind: PlaceKind, mapsTarget: String?): Boolean {
-    val place = container.car.place(kind)
-    val label = context.getString(kind.label)
+fun navigateTo(context: Context, container: AppContainer, kind: PlaceKind, mapsTarget: String?): Boolean =
+    navigateToPlace(context, container.car.place(kind), context.getString(kind.label), mapsTarget)
+
+/** Same, to any place (a route shared from the phone). */
+fun navigateToPlace(context: Context, place: Place, label: String, mapsTarget: String?): Boolean {
     val pkg = mapsTarget?.let { parseDockTarget(it).packageName }
     val spec = navigationSpec(place, pkg, label) ?: return false
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(spec.uri)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

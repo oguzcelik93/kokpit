@@ -46,11 +46,15 @@ import kotlinx.serialization.json.put
  * - Wi-Fi: the phone's browser, on the unit's hotspot/own-Wi-Fi address only;
  * - Bluetooth: Kokpit Kumanda on a paired phone, over a secure RFCOMM link ([PanelBluetooth]).
  * Both carry the same requests to the same [handle], so on either door:
- * - opened only from the unit (the QR on screen means you are in the car); never the internet;
- * - a fresh 128-bit token per opening, then the owner's PIN for a session; closes after
- *   [PANEL_IDLE_MS] idle or [PANEL_MAX_MS];
- * - a fixed list of actions (no installs, no shell, no settings, no file browsing); every
- *   input is checked; photos must decode as pictures.
+ * - opened only by someone in the car: the QR on the unit's screen, or Kumanda's "Bağlan",
+ *   which waits for a tap on "İzin ver" on the unit; never the internet;
+ * - a fresh 128-bit token per opening, then the owner's PIN (or, over Bluetooth only, the key
+ *   of a phone the owner chose to remember) for a session; closes after [PANEL_IDLE_MS] idle
+ *   or [PANEL_MAX_MS];
+ * - a fixed list of actions (no installs, no shell, no file browsing); every input is checked;
+ *   photos must decode as pictures.
+ * With the panel closed, the Bluetooth door takes only the connection request and, from a
+ * remembered phone, a shared route or photo ("Paylaş → Kokpit").
  */
 class PhonePanel(private val context: Context, private val container: AppContainer) {
     /** [url] is the QR text; [wifi]/[bluetooth] say which doors are open. */
@@ -59,13 +63,36 @@ class PhonePanel(private val context: Context, private val container: AppContain
     private val _status = MutableStateFlow<Status?>(null)
     val status: StateFlow<Status?> = _status.asStateFlow()
 
-    /** One opening of the panel: its listeners, closed together. */
-    private class Opening(val tcp: ServerSocket?, val bt: PanelBluetooth.Server?, val openedMs: Long) {
+    /** One opening of the panel: its Wi-Fi listener (the Bluetooth door stays). */
+    private class Opening(val tcp: ServerSocket?, val openedMs: Long) {
         fun close() {
             runCatching { tcp?.close() }
-            bt?.close()
         }
     }
+
+    /** A paired phone asking, from Kumanda's "Bağlan", to open the panel. */
+    data class Knock(val peer: Peer, val remembered: Boolean)
+
+    private val _knock = MutableStateFlow<Knock?>(null)
+    val knock: StateFlow<Knock?> = _knock.asStateFlow()
+    private val knockLock = Object()
+    private var knockAnswer: Boolean? = null
+    private val refusedAt = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    /** A route sent from a remembered phone, waiting on the unit for "Yola çık". */
+    private val _route = MutableStateFlow<SharedRoute?>(null)
+    val route: StateFlow<SharedRoute?> = _route.asStateFlow()
+    fun clearRoute() { _route.value = null }
+
+    /** Brings Kokpit to the front (a request or a route is waiting on its screen). */
+    var onAttention: () -> Unit = {}
+
+    @Volatile private var door: PanelBluetooth.Server? = null
+    private val trust = PanelTrust(context)
+
+    /** Remembered phones, for the unit's list. */
+    fun trustedPhones(): List<TrustedPhone> = trust.list()
+    fun forgetPhone(address: String) = trust.remove(address)
 
     @Volatile private var current: Opening? = null
     @Volatile private var token: String = ""
@@ -79,21 +106,41 @@ class PhonePanel(private val context: Context, private val container: AppContain
     /** Why the Bluetooth door is closed this time (null when open). */
     val bluetoothProblem: String? get() = bluetooth.problem
 
+    /**
+     * Keeps the Bluetooth door open while Kokpit runs (reopened when Bluetooth comes back).
+     * Call once, at start.
+     */
+    fun startDoor() {
+        Thread {
+            while (true) {
+                if (door?.running != true) {
+                    door = bluetooth.listen()?.also { server ->
+                        server.serve { peer, input, out ->
+                            while (serveOnePanelRequest(input, out, { tokenOk(it) || remembered(peer, it) }) { r, b, o -> dispatch(peer, r, b, o) }) Unit
+                        }
+                    }
+                }
+                runCatching { Thread.sleep(DOOR_CHECK_MS) }
+            }
+        }.apply { isDaemon = true; name = "kokpit-panel-door" }.start()
+    }
+
     /** Opens the panel; returns its status (QR text, open doors), or null when neither door could open. */
     @Synchronized
     fun open(): Status? {
         stopServer()
         val ip = localIpv4()
         val tcp = ip?.let { runCatching { ServerSocket(0, 8, InetAddress.getByName(it)) }.getOrNull() }
-        val bt = bluetooth.listen()
-        val url = panelQr(ip.takeIf { tcp != null }, tcp?.localPort, newToken().also { token = it }, bt?.name, bt != null)
+        val bt = door?.takeIf { it.running }
+        val newToken = newToken()
+        val url = panelQr(ip.takeIf { tcp != null }, tcp?.localPort, newToken, bt?.name, bt != null)
         if (url == null) {
             runCatching { tcp?.close() }
-            bt?.close()
             return null
         }
+        token = newToken
         val opened = System.currentTimeMillis()
-        val opening = Opening(tcp, bt, opened)
+        val opening = Opening(tcp, opened)
         current = opening
         val status = Status(url, opened, wifi = tcp != null, bluetooth = bt != null)
         _status.value = status
@@ -105,14 +152,12 @@ class PhonePanel(private val context: Context, private val container: AppContain
                     runCatching {
                         client.use { c ->
                             c.soTimeout = 30_000
-                            serveOnePanelRequest(BufferedInputStream(c.getInputStream()), c.getOutputStream(), ::tokenOk, ::handleOne)
+                            serveOnePanelRequest(BufferedInputStream(c.getInputStream()), c.getOutputStream(), ::tokenOk) { r, b, o -> dispatch(null, r, b, o) }
                         }
                     }
                 }
             }.apply { isDaemon = true; name = "kokpit-panel" }.start()
         }
-        // One link carries one request after another, until the phone or the panel closes it.
-        bt?.serve { input, out -> while (current === opening && serveOnePanelRequest(input, out, ::tokenOk, ::handleOne)) Unit }
 
         Thread {
             while (current === opening) {
@@ -131,6 +176,7 @@ class PhonePanel(private val context: Context, private val container: AppContain
     /** On the unit only: forget the PIN (the next connection sets a new one). */
     fun resetPin() {
         pin.reset()
+        trust.clear()
         sessions.clear()
     }
 
@@ -152,6 +198,7 @@ class PhonePanel(private val context: Context, private val container: AppContain
 
     /** Stops listening without touching the Wi-Fi (used when reopening). */
     private fun stopServer() {
+        token = ""
         sessions.clear()
         current?.close()
         current = null
@@ -162,10 +209,80 @@ class PhonePanel(private val context: Context, private val container: AppContain
 
     private fun tokenOk(req: PanelRequest): Boolean = tokenMatches(token, req.query["t"] ?: req.headers["x-kokpit-token"])
 
-    private fun handleOne(req: PanelRequest, body: ByteArray, out: OutputStream) = synchronized(handling) { handle(req, body, out) }
+    /** A remembered phone, on its own Bluetooth link, with its key. */
+    private fun remembered(peer: Peer?, req: PanelRequest): Boolean = peer != null && trust.check(peer.address, req.headers[DEVICE_KEY_HEADER])
 
-    private fun handle(req: PanelRequest, requestBody: ByteArray, out: OutputStream) {
-        fun reply(out: OutputStream, code: Int, type: String, body: ByteArray) = writePanelReply(out, code, type, body)
+    private fun dispatch(peer: Peer?, req: PanelRequest, body: ByteArray, out: OutputStream) {
+        when {
+            // Waits for the tap on the unit, so it must not hold up anyone else's requests.
+            req.path == "/api/knock" -> knock(peer, req, out)
+            req.path.startsWith("/api/share/") || req.path == "/api/hello" -> synchronized(handling) { share(peer, req, body, out) }
+            else -> synchronized(handling) { handle(peer, req, body, out) }
+        }
+    }
+
+    /** Kumanda's "Bağlan": shown on the unit; only "İzin ver" there opens the panel for this phone. */
+    private fun knock(peer: Peer?, req: PanelRequest, out: OutputStream) {
+        fun reply(code: Int, text: String) = writePanelReply(out, code, "text/plain; charset=utf-8", text.toByteArray())
+        if (peer == null || req.method != "POST") return reply(404, "not found")
+        val asked = System.currentTimeMillis()
+        synchronized(knockLock) {
+            if (_knock.value != null) return reply(400, "Ünitede başka bir bağlanma isteği bekliyor.")
+            if (asked - (refusedAt[peer.address] ?: 0L) < KNOCK_COOLDOWN_MS) return reply(400, "Ünitede reddedildi. Biraz sonra tekrar deneyin.")
+            knockAnswer = null
+            _knock.value = Knock(peer, trust.list().any { it.address == peer.address })
+        }
+        onAttention()
+        val answer: Boolean?
+        synchronized(knockLock) {
+            while (knockAnswer == null && System.currentTimeMillis() - asked < KNOCK_WAIT_MS) knockLock.wait(1_000)
+            answer = knockAnswer
+            knockAnswer = null
+            _knock.value = null
+        }
+        if (answer != true) {
+            if (answer == false) refusedAt[peer.address] = System.currentTimeMillis()
+            return reply(403, if (answer == false) "Ünitede reddedildi." else "Ünitede kimse \"İzin ver\"e dokunmadı.")
+        }
+        if (_status.value == null && open() == null) return reply(400, "Panel açılamadı.")
+        _status.value = _status.value?.copy(lastActivityMs = System.currentTimeMillis())
+        reply(200, token)
+    }
+
+    /** The unit's answer to [knock] ("İzin ver" / "Reddet"). */
+    fun answerKnock(allow: Boolean) = synchronized(knockLock) {
+        if (_knock.value != null) {
+            knockAnswer = allow
+            knockLock.notifyAll()
+        }
+    }
+
+    /** "Paylaş → Kokpit" from a remembered phone: a route, or a photo for the album. */
+    private fun share(peer: Peer?, req: PanelRequest, requestBody: ByteArray, out: OutputStream) {
+        fun reply(code: Int, text: String) = writePanelReply(out, code, "text/plain; charset=utf-8", text.toByteArray())
+        if (!remembered(peer, req)) return reply(403, "Bu telefon tanınmıyor. Önce Kumanda'da \"Bağlan\" deyip PIN'i girerken \"Bu telefonu hatırla\"yı işaretleyin.")
+        when {
+            req.method == "GET" && req.path == "/api/hello" -> reply(200, peer!!.name)
+            req.method == "POST" && req.path == "/api/share/nav" -> {
+                val text = requestBody.takeIf { it.isNotEmpty() && it.size <= PANEL_MAX_JSON }?.decodeToString() ?: return reply(400, "Boş")
+                _route.value = parseSharedRoute(text) ?: return reply(400, "Bu paylaşımda bir yer bulunamadı.")
+                onAttention()
+                reply(200, "Rota ünitede hazır.")
+            }
+            req.method == "POST" && req.path == "/api/share/photo" -> {
+                if (requestBody.isEmpty()) return reply(400, "Boş")
+                if (!container.wallpaper.save(ByteArrayInputStream(requestBody))) return reply(400, "Bu bir fotoğraf değil.")
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    android.widget.Toast.makeText(context, io.github.yorulmazsinan.kokpit.R.string.photo_from_phone, android.widget.Toast.LENGTH_SHORT).show()
+                }
+                reply(200, "Fotoğraf albüme eklendi.")
+            }
+            else -> reply(404, "not found")
+        }
+    }
+
+    private fun handle(peer: Peer?, req: PanelRequest, requestBody: ByteArray, out: OutputStream) {
+        fun reply(out: OutputStream, code: Int, type: String, body: ByteArray, extra: Map<String, String> = emptyMap()) = writePanelReply(out, code, type, body, extra)
         val given = req.query["t"] ?: req.headers["x-kokpit-token"]
         if (!tokenMatches(token, given)) return reply(out, 403, "text/plain", "forbidden".toByteArray())
         _status.value = _status.value?.copy(lastActivityMs = System.currentTimeMillis())
@@ -179,10 +296,20 @@ class PhonePanel(private val context: Context, private val container: AppContain
         when {
             req.method == "GET" && req.path == "/" -> return reply(out, 200, "text/html; charset=utf-8", panelPage(token).toByteArray())
             req.method == "GET" && req.path == "/api/pin" -> return reply(out, 200, "application/json; charset=utf-8",
-                buildJsonObject { put("set", pin.isSet); put("lockedUntil", pin.lockedUntil()) }.toString().toByteArray())
+                buildJsonObject {
+                    put("set", pin.isSet); put("lockedUntil", pin.lockedUntil())
+                    // Kumanda (Bluetooth) may remember the phone; a remembered one skips the PIN.
+                    put("kumanda", peer != null); put("remembered", pin.isSet && remembered(peer, req))
+                }.toString().toByteArray())
+            req.method == "POST" && req.path == "/api/pin/device" -> {
+                if (!pin.isSet || !remembered(peer, req)) return reply(out, 401, "text/plain; charset=utf-8", "PIN gerekli".toByteArray())
+                return ok(newSession())
+            }
             req.method == "POST" && (req.path == "/api/pin/setup" || req.path == "/api/pin/login") -> {
                 val text = body(PANEL_MAX_JSON)?.decodeToString() ?: return bad("Boş")
-                val entered = runCatching { Json.parseToJsonElement(text).jsonObject["pin"]?.jsonPrimitive?.content }.getOrNull().orEmpty()
+                val fields = runCatching { Json.parseToJsonElement(text).jsonObject }.getOrNull()
+                val entered = runCatching { fields?.get("pin")?.jsonPrimitive?.content }.getOrNull().orEmpty()
+                val remember = runCatching { fields?.get("remember")?.jsonPrimitive?.content == "true" }.getOrDefault(false)
                 if (req.path == "/api/pin/setup") {
                     if (pin.isSet) return bad("PIN zaten belirlenmiş")
                     if (!pin.create(entered)) return bad("4 rakam seçin; 0000, 1234 gibi kolay PIN'ler olmaz")
@@ -193,8 +320,12 @@ class PhonePanel(private val context: Context, private val container: AppContain
                         is PinResult.Locked -> return bad("Çok fazla yanlış deneme. ${((r.untilMs - System.currentTimeMillis()) / 60_000 + 1)} dakika sonra tekrar deneyin.")
                     }
                 }
-                val session = ByteArray(16).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }
-                sessions += session
+                val session = newSession()
+                // Only over Bluetooth: the key is bound to this phone's own link.
+                if (remember && peer != null) {
+                    val key = trust.add(peer.address, peer.name)
+                    return reply(out, 200, "text/plain; charset=utf-8", session.toByteArray(), mapOf(DEVICE_KEY_HEADER to key))
+                }
                 return ok(session)
             }
         }
@@ -313,9 +444,70 @@ class PhonePanel(private val context: Context, private val container: AppContain
                 container.scope.launch { container.updater.check(downloadIfNew = true) }
                 ok()
             }
+            req.method == "GET" && req.path == "/api/media" -> ok(volumeText())
+            req.method == "POST" && req.path == "/api/media" -> {
+                val action = body(PANEL_MAX_JSON)?.decodeToString()?.let(::parseMediaAction) ?: return bad("Geçersiz düğme")
+                media(action)
+                ok(volumeText())
+            }
+            req.method == "GET" && req.path == "/api/reminders" -> reply(out, 200, "application/json; charset=utf-8", remindersJson().toByteArray())
+            req.method == "POST" && req.path == "/api/reminders" -> {
+                val text = body(PANEL_MAX_JSON)?.decodeToString() ?: return bad("Boş")
+                val changed = io.github.yorulmazsinan.kokpit.car.applyReminders(container.reminders.reminders.value, text) ?: return bad("Tarih ya da kilometre geçersiz")
+                container.reminders.set(changed)
+                ok()
+            }
             req.method == "POST" && req.path == "/api/close" -> { ok(); close() }
             else -> reply(out, 404, "text/plain", "not found".toByteArray())
         }
+    }
+
+    private fun newSession(): String =
+        ByteArray(16).also { SecureRandom().nextBytes(it) }.joinToString("") { "%02x".format(it) }.also { sessions += it }
+
+    private val audio get() = context.getSystemService(android.media.AudioManager::class.java)
+
+    private fun volumeText(): String = runCatching {
+        "${audio.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)}/${audio.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)}"
+    }.getOrDefault("")
+
+    /** The passenger remote: volume, play/pause and tracks (whatever is playing on the unit). */
+    private fun media(action: String) {
+        val am = audio
+        val flags = android.media.AudioManager.FLAG_SHOW_UI
+        when (action) {
+            "vol_up" -> am.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC, android.media.AudioManager.ADJUST_RAISE, flags)
+            "vol_down" -> am.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC, android.media.AudioManager.ADJUST_LOWER, flags)
+            "mute" -> am.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC, android.media.AudioManager.ADJUST_TOGGLE_MUTE, flags)
+            "play" -> container.playPause()
+            "next", "prev" -> {
+                val next = action == "next"
+                if (container.nowPlaying.currentPackage() != null) {
+                    if (next) container.nowPlaying.next() else container.nowPlaying.previous()
+                } else {
+                    val code = if (next) android.view.KeyEvent.KEYCODE_MEDIA_NEXT else android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS
+                    val t = android.os.SystemClock.uptimeMillis()
+                    am.dispatchMediaKeyEvent(android.view.KeyEvent(t, t, android.view.KeyEvent.ACTION_DOWN, code, 0))
+                    am.dispatchMediaKeyEvent(android.view.KeyEvent(t, t, android.view.KeyEvent.ACTION_UP, code, 0))
+                }
+            }
+        }
+    }
+
+    private fun dueJson(): JsonArray {
+        val due = io.github.yorulmazsinan.kokpit.car.dueReminders(container.reminders.reminders.value, TrueTime.date(), container.car.fuel.value.maxOfOrNull { it.odometerKm })
+        return JsonArray(due.map { d -> buildJsonObject { put("text", d.text); put("overdue", d.overdue) } })
+    }
+
+    private fun remindersJson(): String {
+        val r = container.reminders.reminders.value
+        return buildJsonObject {
+            io.github.yorulmazsinan.kokpit.car.ReminderKind.entries.forEach { put(it.key, r.dates[it.key].orEmpty()) }
+            put("oilKm", r.oilKm?.toString().orEmpty())
+            put("tires", r.tires)
+            put("lastKm", container.car.fuel.value.maxOfOrNull { it.odometerKm })
+            put("due", dueJson())
+        }.toString()
     }
 
     private fun state(): String {
@@ -333,6 +525,7 @@ class PhonePanel(private val context: Context, private val container: AppContain
             put("avgL100", stats.averageL100)
             put("monthCost", stats.monthCost)
             put("fuelCount", fuel.size)
+            put("due", dueJson())
         }.toString()
     }
 
@@ -363,4 +556,12 @@ class PhonePanel(private val context: Context, private val container: AppContain
         }).toString()
     }
 
+    private companion object {
+        /** How often the Bluetooth door checks it is still open. */
+        const val DOOR_CHECK_MS = 20_000L
+        /** How long "Bağlan" waits for the tap on the unit. */
+        const val KNOCK_WAIT_MS = 60_000L
+        /** After "Reddet", the same phone waits this long before asking again. */
+        const val KNOCK_COOLDOWN_MS = 30_000L
+    }
 }

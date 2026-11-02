@@ -167,7 +167,7 @@ class HomeScreenshotTest {
         log.begin(0.0, now - 5 * 3_600_000); log.end(18_400.0, now - 5 * 3_600_000 + 26 * 60_000)
         log.begin(0.0, now - 2 * 3_600_000); log.end(42_700.0, now - 2 * 3_600_000 + 58 * 60_000)
         val car = io.github.yorulmazsinan.kokpit.car.CarRepository(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        shot("saab-trips") { io.github.yorulmazsinan.kokpit.car.LogbookScreen(car, log, onBack = {}, initial = io.github.yorulmazsinan.kokpit.car.LogbookTab.TRIPS) }
+        shot("saab-trips") { io.github.yorulmazsinan.kokpit.car.LogbookScreen(car, log, io.github.yorulmazsinan.kokpit.car.ReminderStore(androidx.test.core.app.ApplicationProvider.getApplicationContext()), onBack = {}, initial = io.github.yorulmazsinan.kokpit.car.LogbookTab.TRIPS) }
     }
 
     @Test @Config(qualifiers = "tr-w1024dp-h600dp-land-mdpi")

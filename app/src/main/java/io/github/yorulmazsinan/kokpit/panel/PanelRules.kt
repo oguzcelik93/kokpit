@@ -51,15 +51,25 @@ private val json = Json { ignoreUnknownKeys = true }
 
 private fun JsonObject.text(key: String): String? = this[key]?.jsonPrimitive?.contentOrNull
 
-/** `{"km":"85420","liters":"45,3","price":"2160","full":true}` → entry, or null if anything is off. */
-fun parseFuel(body: String, nowMs: Long, lastOdometer: Int?): FuelEntry? = runCatching {
+/**
+ * `{"km":"85420","liters":"45,3","price":"2160","full":true,"date":"2026-11-01"}` → entry, or
+ * null if anything is off. `date` (from a scanned receipt) is optional: today or up to 60 days back.
+ */
+fun parseFuel(body: String, nowMs: Long, lastOdometer: Int?, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): FuelEntry? = runCatching {
     val o = json.parseToJsonElement(body).jsonObject
     val km = o.text("km")?.trim()?.toIntOrNull()?.takeIf { it in 1..2_000_000 } ?: return null
     if (lastOdometer != null && km <= lastOdometer) return null
     val liters = o.text("liters")?.let(::parseDecimal)?.takeIf { it <= 200 } ?: return null
     val price = o.text("price")?.let(::parseDecimal)?.takeIf { it <= 100_000 } ?: return null
     val full = o["full"]?.jsonPrimitive?.booleanOrNull ?: true
-    FuelEntry(nowMs, km, liters, price, full)
+    val dateText = o.text("date")?.trim().orEmpty()
+    val time = if (dateText.isEmpty()) nowMs else {
+        val today = java.time.Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()
+        val date = java.time.LocalDate.parse(dateText)
+        if (date.isAfter(today) || date.isBefore(today.minusDays(60))) return null
+        if (date == today) nowMs else date.atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+    }
+    FuelEntry(time, km, liters, price, full)
 }.getOrNull()
 
 /** `{"kind":"home","address":"…"}` → (kind, address); address trimmed, 2–200 chars, no control characters. */
@@ -90,7 +100,7 @@ fun recordDelete(path: String, kind: String): Long? =
 /** Settings the panel may change, with the values each may take. Anything else is refused. */
 private val BOOL_SETTINGS = setOf(
     "autoBrightness", "autoNightPanel", "idleScreen", "autoResume", "wakeToKokpit", "keepHome",
-    "autoCarPlayOnUsb", "autoUpdate", "introSound", "introEveryWake",
+    "autoCarPlayOnUsb", "autoUpdate", "introSound", "introEveryWake", "driverProfiles",
 )
 
 /**
@@ -113,6 +123,7 @@ fun applyPanelSettings(current: io.github.yorulmazsinan.kokpit.settings.KokpitSe
                 "keepHome" -> s.copy(keepHome = b)
                 "autoCarPlayOnUsb" -> s.copy(autoCarPlayOnUsb = b)
                 "autoUpdate" -> s.copy(autoUpdate = b)
+                "driverProfiles" -> s.copy(driverProfiles = b)
                 "introSound" -> s.copy(intro = s.intro.copy(withSound = b))
                 else -> s.copy(intro = s.intro.copy(everyWake = b))
             }
@@ -149,6 +160,7 @@ fun panelSettingsJson(s: io.github.yorulmazsinan.kokpit.settings.KokpitSettings)
     put("keepHome", JsonPrimitive(s.keepHome))
     put("autoCarPlayOnUsb", JsonPrimitive(s.autoCarPlayOnUsb))
     put("autoUpdate", JsonPrimitive(s.autoUpdate))
+    put("driverProfiles", JsonPrimitive(s.driverProfiles))
 }.toString()
 
 /**
@@ -199,10 +211,15 @@ fun readExactly(input: InputStream, length: Int): ByteArray? {
     return bytes
 }
 
-/** One plain response. Every response carries Content-Length, so a kept-open Bluetooth link stays in step. */
-fun writePanelReply(out: OutputStream, code: Int, type: String, body: ByteArray) {
+/**
+ * One plain response. Every response carries Content-Length, so a kept-open Bluetooth link
+ * stays in step. [extra] headers are for Kokpit Kumanda only (it takes them off before its
+ * WebView sees the response).
+ */
+fun writePanelReply(out: OutputStream, code: Int, type: String, body: ByteArray, extra: Map<String, String> = emptyMap()) {
     val reason = mapOf(200 to "OK", 400 to "Bad Request", 401 to "Unauthorized", 403 to "Forbidden", 404 to "Not Found", 411 to "Length Required", 413 to "Payload Too Large")[code] ?: "Error"
-    out.write("HTTP/1.1 $code $reason\r\nContent-Type: $type\r\nContent-Length: ${body.size}\r\nConnection: close\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\n".toByteArray())
+    val more = extra.entries.joinToString("") { "${it.key}: ${it.value}\r\n" }
+    out.write("HTTP/1.1 $code $reason\r\nContent-Type: $type\r\nContent-Length: ${body.size}\r\n${more}Connection: close\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\n".toByteArray())
     out.write(body)
     out.flush()
 }
@@ -240,3 +257,37 @@ fun serveOnePanelRequest(
     handler(req, body, out)
     return true
 }
+
+/** The header Kokpit Kumanda sends a remembered phone's key in (and receives a new one in). */
+const val DEVICE_KEY_HEADER = "x-kokpit-device-key"
+
+/** A remembered phone's key: 32 random bytes as 64 hex digits. */
+fun isDeviceKey(text: String?): Boolean = text != null && text.length == 64 && text.all { it in '0'..'9' || it in 'a'..'f' }
+
+/** A route sent from the phone ("Paylaş → Kokpit" in a maps app): a point, a search text, or both. */
+data class SharedRoute(val lat: Double?, val lon: Double?, val label: String)
+
+/**
+ * `{"lat":41.01,"lon":28.97,"label":"Galata Kulesi"}` or `{"label":"Bağdat Cd. 10, Kadıköy"}`.
+ * Coordinates must be real ones; the label (1–200 chars, no control characters) is what the
+ * unit shows and, without a point, what the maps app searches for.
+ */
+fun parseSharedRoute(body: String): SharedRoute? = runCatching {
+    val o = json.parseToJsonElement(body).jsonObject
+    val lat = o.text("lat")?.toDoubleOrNull()
+    val lon = o.text("lon")?.toDoubleOrNull()
+    if ((lat == null) != (lon == null)) return null
+    if (lat != null && (lat !in -90.0..90.0 || lon!! !in -180.0..180.0 || (lat == 0.0 && lon == 0.0))) return null
+    val label = o.text("label")?.trim().orEmpty()
+    if (label.any(Char::isISOControl) || label.length > 200) return null
+    if (label.isEmpty() && lat == null) return null
+    SharedRoute(lat, lon, label.ifEmpty { "%.5f, %.5f".format(java.util.Locale.US, lat, lon) })
+}.getOrNull()
+
+/** The passenger remote's buttons. */
+val MEDIA_ACTIONS = setOf("vol_up", "vol_down", "mute", "play", "next", "prev")
+
+/** `{"action":"next"}` → "next", or null for anything not on the list. */
+fun parseMediaAction(body: String): String? = runCatching {
+    json.parseToJsonElement(body).jsonObject.text("action")?.takeIf { it in MEDIA_ACTIONS }
+}.getOrNull()

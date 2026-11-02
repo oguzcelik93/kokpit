@@ -45,6 +45,8 @@ data class KokpitSettings(
     val autoUpdate: Boolean = true,
     val wakeToKokpit: Boolean = true,
     val keepHome: Boolean = true,
+    /** Home/work, photo, music and brightness follow the phone connected over Bluetooth. */
+    val driverProfiles: Boolean = true,
 )
 
 class SettingsRepository(
@@ -81,6 +83,7 @@ class SettingsRepository(
         autoUpdate = p[AUTO_UPDATE] ?: true,
         wakeToKokpit = p[WAKE_TO_KOKPIT] ?: true,
         keepHome = p[KEEP_HOME] ?: true,
+        driverProfiles = p[DRIVER_PROFILES] ?: true,
         radioPresets = RadioPresetCodec.decode(p[RADIO_PRESETS]),
         intro = IntroSettings(
             mode = p[INTRO_MODE]?.let { runCatching { IntroMode.valueOf(it) }.getOrNull() } ?: IntroMode.SEASONAL,
@@ -120,6 +123,7 @@ class SettingsRepository(
         p[AUTO_UPDATE] = s.autoUpdate
         p[WAKE_TO_KOKPIT] = s.wakeToKokpit
         p[KEEP_HOME] = s.keepHome
+        p[DRIVER_PROFILES] = s.driverProfiles
         p[RADIO_PRESETS] = RadioPresetCodec.encode(s.radioPresets)
         p[AUTO_CARPLAY] = s.autoCarPlayOnUsb
         p[INTRO_MODE] = s.intro.mode.name
@@ -159,6 +163,7 @@ class SettingsRepository(
         val AUTO_UPDATE = booleanPreferencesKey("auto_update")
         val WAKE_TO_KOKPIT = booleanPreferencesKey("wake_to_kokpit")
         val KEEP_HOME = booleanPreferencesKey("keep_home")
+        val DRIVER_PROFILES = booleanPreferencesKey("driver_profiles")
         val RADIO_PRESETS = stringPreferencesKey("radio_presets")
         val AUTO_CARPLAY = booleanPreferencesKey("auto_carplay_usb")
         val INTRO_MODE = stringPreferencesKey("intro_mode")
