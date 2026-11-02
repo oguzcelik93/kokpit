@@ -82,6 +82,8 @@ fun HomeRoute(
     }
 
     val wallpaper by container.wallpaper.image.collectAsStateWithLifecycle()
+    val selectedPhoto by container.wallpaper.selected.collectAsStateWithLifecycle()
+    val framings by container.wallpaper.framing.collectAsStateWithLifecycle()
     val browserTarget = state.dock[DockSlot.BROWSER]
     val browserIcon = remember(browserTarget) {
         browserTarget?.let { t ->
@@ -120,6 +122,7 @@ fun HomeRoute(
             onBrightness = { container.brightnessPanel.value = true },
             onWindowOpen = { if (!launchSlot(DockSlot.BROWSER)) onOpenWindow() },
             onWindowSettings = onOpenWindow,
+            onWindowSize = { w, h -> container.wallpaper.cardSizes.value += ((wallpaper?.portrait == true) to (w to h)) },
             car = CarShortcuts(
                 onHome = { if (!navigateTo(context, container, PlaceKind.HOME, state.dock[DockSlot.MAPS])) onOpenPlaces() },
                 onWork = { if (!navigateTo(context, container, PlaceKind.WORK, state.dock[DockSlot.MAPS])) onOpenPlaces() },
@@ -133,6 +136,7 @@ fun HomeRoute(
         ),
         // The dock lives in the app shell so it stays put across Phone, Music and Radio.
         showDock = false,
-        window = WindowCardState(wallpaper?.photo, browserTarget?.let(container.installedApps::label), browserIcon, wallpaper?.backdrop, wallpaper?.portrait == true),
+        window = WindowCardState(wallpaper?.photo, browserTarget?.let(container.installedApps::label), browserIcon, wallpaper?.backdrop, wallpaper?.portrait == true,
+            selectedPhoto?.let { framings[it] } ?: io.github.yorulmazsinan.kokpit.car.Framing()),
     )
 }

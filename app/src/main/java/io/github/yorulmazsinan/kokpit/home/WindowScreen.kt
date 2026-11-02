@@ -7,11 +7,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import io.github.yorulmazsinan.kokpit.car.gesture
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.Image
@@ -70,6 +75,7 @@ fun WindowScreen(container: AppContainer, onBack: () -> Unit, onPickApp: (DockSl
     var status by remember { mutableStateOf<String?>(null) }
     var found by remember { mutableStateOf<List<File>?>(null) }
     var receiver by remember { mutableStateOf<PhotoReceiver?>(null) }
+    var framing by remember { mutableStateOf(false) }
     DisposableEffect(Unit) { onDispose { receiver?.stop() } }
 
     ScreenScaffold(stringResource(R.string.window_title), onBack) {
@@ -146,12 +152,66 @@ fun WindowScreen(container: AppContainer, onBack: () -> Unit, onPickApp: (DockSl
                 item { HelpText(stringResource(R.string.window_album_help)) }
             }
             if (image != null) {
+                item { ListRow("Kadrajı ayarla", "İki parmakla yakınlaştırın, sürükleyerek kaydırın: kartta tam bu kısım görünür") { framing = true } }
                 item {
                     ListRow(stringResource(R.string.window_rotate), stringResource(R.string.window_rotate_help)) {
                         scope.launch(Dispatchers.IO) { container.wallpaper.rotateQuarter() }
                     }
                 }
                 item { ListRow(stringResource(R.string.window_remove), stringResource(R.string.window_remove_help)) { selected?.let(container.wallpaper::delete) } }
+            }
+        }
+    }
+    val img = image
+    val id = selected
+    if (framing && img != null && id != null) FramingEditor(container, id, img) { framing = false }
+}
+
+/**
+ * "Kadrajı ayarla": the selected photo in a frame shaped like its home card; pinch to zoom,
+ * drag to move (or the buttons, for one-finger screens). Saved per photo.
+ */
+@Composable
+private fun FramingEditor(container: AppContainer, id: String, image: io.github.yorulmazsinan.kokpit.car.WallpaperImage, onClose: () -> Unit) {
+    val saved by container.wallpaper.framing.collectAsStateWithLifecycle()
+    val sizes by container.wallpaper.cardSizes.collectAsStateWithLifecycle()
+    var f by remember(id) { mutableStateOf(saved[id] ?: io.github.yorulmazsinan.kokpit.car.Framing()) }
+    var box by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+    val aspect = sizes[image.portrait]?.let { (w, h) -> w.toFloat() / h } ?: if (image.portrait) 0.62f else 1.9f
+    val iw = image.photo.width.toFloat()
+    val ih = image.photo.height.toFloat()
+    fun step(zoom: Float, dx: Float, dy: Float) {
+        if (box.width > 0) f = f.gesture(zoom, dx, dy, box.width.toFloat(), box.height.toFloat(), iw, ih)
+    }
+    androidx.compose.ui.window.Dialog(onDismissRequest = onClose, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        androidx.compose.material3.Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) {
+            Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                val frameH = 420.dp
+                Box(
+                    Modifier.size(width = (frameH.value * aspect).coerceAtMost(620f).dp, height = (frameH.value * aspect).coerceAtMost(620f).dp / aspect)
+                        .border(2.dp, MaterialTheme.colorScheme.primary)
+                        .onSizeChanged { box = it }
+                        .pointerInput(Unit) { detectTransformGestures { _, pan, zoom, _ -> step(zoom, pan.x, pan.y) } },
+                ) {
+                    io.github.yorulmazsinan.kokpit.home.cards.FramedImage(image.photo, f, Modifier.fillMaxSize())
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Kadraj", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        androidx.compose.material3.OutlinedButton(onClick = { step(1f / 1.15f, 0f, 0f) }) { Text("−") }
+                        androidx.compose.material3.OutlinedButton(onClick = { step(1.15f, 0f, 0f) }) { Text("+") }
+                    }
+                    val nudge = 0.15f
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        androidx.compose.material3.OutlinedButton(onClick = { f = f.copy(fy = (f.fy - nudge).coerceIn(-1f, 1f)) }) { Text("↑") }
+                        androidx.compose.material3.OutlinedButton(onClick = { f = f.copy(fy = (f.fy + nudge).coerceIn(-1f, 1f)) }) { Text("↓") }
+                        androidx.compose.material3.OutlinedButton(onClick = { f = f.copy(fx = (f.fx - nudge).coerceIn(-1f, 1f)) }) { Text("←") }
+                        androidx.compose.material3.OutlinedButton(onClick = { f = f.copy(fx = (f.fx + nudge).coerceIn(-1f, 1f)) }) { Text("→") }
+                    }
+                    androidx.compose.material3.Button(onClick = { container.wallpaper.setFraming(id, f); onClose() }, modifier = Modifier.fillMaxWidth()) { Text("Kaydet") }
+                    androidx.compose.material3.OutlinedButton(onClick = { f = io.github.yorulmazsinan.kokpit.car.Framing() }, modifier = Modifier.fillMaxWidth()) { Text("Sıfırla") }
+                    androidx.compose.material3.TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text("İptal") }
+                }
             }
         }
     }

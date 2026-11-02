@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Kokpit Kumanda</string>
-    <string name="steps">İlk kez: ünitede Ayarlar → \"Telefondan yönet\"e basıp QR\'ı okutun ve PIN\'i girin (\"Bu telefonu hatırla\" işaretli kalsın).
-Sonra: \"Bağlan\"a dokunun, ünitede \"İzin ver\"e basın. QR da PIN de gerekmez.</string>
+    <string name="steps">1. Telefon üniteyle Bluetooth\'ta eşleşmiş olsun.\n2. \"Bağlan\"a dokunun, ünitede \"İzin ver\"e basın.\n3. İlk seferde PIN\'i girin (\"Bu telefonu hatırla\" işaretli kalsın); sonra PIN de sorulmaz.</string>
     <string name="scan">QR\'ı okut</string>
     <string name="note">Wi-Fi gerekmez: telefon üniteye Bluetooth ile bağlanır. Haritalardan bir yeri ya da galeriden fotoğrafı \"Paylaş → Kokpit Kumanda\" ile üniteye gönderebilirsiniz (hatırlanan telefonlar). Panel ünitede 15 dakika kullanılmazsa ya da 1 saat dolunca kapanır.</string>
     <string name="connecting">Üniteye bağlanılıyor…</string>
@@ -36,4 +35,6 @@ Sonra: \"Bağlan\"a dokunun, ünitede \"İzin ver\"e basın. QR da PIN de gerekm
     <string name="share_photo_progress">Fotoğraf gönderiliyor %1$d/%2$d…</string>
     <string name="share_photo_done">%1$d fotoğraf albüme eklendi.</string>
     <string name="share_failed">Gönderilemedi. Ünite açık mı, Bluetooth yakın mı?</string>
+    <string name="crashed_before">Kumanda geçen sefer kapandı: %1$s\nAyrıntıyı kopyalamak için bu yazıya uzun basın.</string>
+    <string name="copied">Kopyalandı</string>
 </resources>

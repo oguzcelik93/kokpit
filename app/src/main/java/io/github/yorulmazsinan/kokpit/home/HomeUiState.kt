@@ -41,5 +41,7 @@ class HomeActions(
     val onBrightness: () -> Unit = {},
     val onWindowOpen: () -> Unit = {},
     val onWindowSettings: () -> Unit = {},
+    /** The photo card's size, so the framing editor shows the same frame. */
+    val onWindowSize: (Int, Int) -> Unit = { _, _ -> },
     val car: io.github.yorulmazsinan.kokpit.home.cards.CarShortcuts? = null,
 )

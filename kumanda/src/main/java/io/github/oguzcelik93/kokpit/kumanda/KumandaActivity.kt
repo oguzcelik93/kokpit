@@ -68,9 +68,20 @@ class KumandaActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CrashNote.install(this)
         window.statusBarColor = BG
         window.navigationBarColor = BG
         buildUi()
+        // The last crash, if any: shown once, long-press copies the details.
+        CrashNote.take(this)?.let { trace ->
+            show(getString(R.string.crashed_before, trace.lineSequence().take(2).joinToString(" ")))
+            status.setOnLongClickListener {
+                getSystemService(android.content.ClipboardManager::class.java)
+                    ?.setPrimaryClip(android.content.ClipData.newPlainText("Kokpit Kumanda", trace))
+                android.widget.Toast.makeText(this, R.string.copied, android.widget.Toast.LENGTH_SHORT).show()
+                true
+            }
+        }
         handleLink(intent)
     }
 
@@ -152,8 +163,10 @@ class KumandaActivity : Activity() {
 
     /** "Bağlan" once a unit is known (the QR then becomes the second way); park buttons. */
     private fun refreshHome() {
-        val known = link.lastUnit != null
-        knock.visibility = if (known) View.VISIBLE else View.GONE
+        // "Bağlan" works from the very first time (the unit is found among the paired devices
+        // and asks "İzin ver"); the QR stays as the second way.
+        val known = true
+        knock.visibility = View.VISIBLE
         scan.setTextColor(if (known) FG else BG)
         scan.setBackgroundColor(if (known) CARD else ACCENT)
         val spot = ParkWatch.last(this)
@@ -209,12 +222,16 @@ class KumandaActivity : Activity() {
             .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
             .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_BASE)
             .build()
-        GmsDocumentScanning.getClient(options).getStartScanIntent(this)
-            .addOnSuccessListener { sender ->
-                runCatching { startIntentSenderForResult(sender, REQ_RECEIPT, null, 0, 0, 0) }
-                    .onFailure { fillReceipt(JSONObject().put("error", getString(R.string.receipt_failed))) }
-            }
-            .addOnFailureListener { fillReceipt(JSONObject().put("error", getString(R.string.receipt_failed))) }
+        try {
+            GmsDocumentScanning.getClient(options).getStartScanIntent(this)
+                .addOnSuccessListener { sender ->
+                    runCatching { startIntentSenderForResult(sender, REQ_RECEIPT, null, 0, 0, 0) }
+                        .onFailure { fillReceipt(JSONObject().put("error", getString(R.string.receipt_failed))) }
+                }
+                .addOnFailureListener { fillReceipt(JSONObject().put("error", getString(R.string.receipt_failed))) }
+        } catch (e: Throwable) {
+            fillReceipt(JSONObject().put("error", getString(R.string.receipt_failed)))
+        }
     }
 
     private fun readReceipt(uri: Uri) {
@@ -278,10 +295,15 @@ class KumandaActivity : Activity() {
     }
 
     private fun startScan() {
-        val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).enableAutoZoom().build()
-        GmsBarcodeScanning.getClient(this, options).startScan()
-            .addOnSuccessListener { onQr(it.rawValue.orEmpty()) }
-            .addOnFailureListener { show(getString(R.string.scanner_failed)) }
+        // A broken scanner must never take the app down: say what happened, offer "Bağlan".
+        try {
+            val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).enableAutoZoom().build()
+            GmsBarcodeScanning.getClient(this, options).startScan()
+                .addOnSuccessListener { onQr(it.rawValue.orEmpty()) }
+                .addOnFailureListener { e -> show(getString(R.string.scanner_failed) + "\n(" + e.javaClass.simpleName + ": " + e.message.orEmpty() + ")") }
+        } catch (e: Throwable) {
+            show(getString(R.string.scanner_failed) + "\n(" + e.javaClass.simpleName + ": " + e.message.orEmpty() + ")")
+        }
     }
 
     private fun onQr(text: String) {

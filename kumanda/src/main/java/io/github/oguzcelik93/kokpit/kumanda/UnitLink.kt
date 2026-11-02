@@ -93,7 +93,7 @@ class UnitLink(context: Context) {
             }
         }
         throw LinkException(
-            "Ünite bulunamadı. Ünitede \"Telefondan yönet\" ekranı açık mı? Telefon üniteyle eşleşmiş mi" +
+            "Ünite bulunamadı. Ünite açık ve Kokpit 0.16 ya da üstü mü? Telefon üniteyle Bluetooth'ta eşleşmiş mi" +
                 (unitName?.let { " (ünitenin adı: $it)" } ?: "") + "?",
         )
     }

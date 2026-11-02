@@ -91,6 +91,21 @@ class WallpaperStore(private val context: Context, private val scope: CoroutineS
     private val _selected = MutableStateFlow<String?>(null)
     val selected: StateFlow<String?> = _selected.asStateFlow()
     private val thumbs = mutableMapOf<String, ImageBitmap>()
+    private val framings = context.getSharedPreferences("wallpaper_framing", Context.MODE_PRIVATE)
+    private val _framing = MutableStateFlow(readFramings())
+    /** Each photo's own zoom and position in the card ("Kadrajı ayarla"). */
+    val framing: StateFlow<Map<String, Framing>> = _framing.asStateFlow()
+
+    /** The home card's size in pixels, per layout (true = portrait photo), so the framing editor matches it. */
+    val cardSizes = MutableStateFlow<Map<Boolean, Pair<Int, Int>>>(emptyMap())
+
+    fun setFraming(id: String, f: Framing?) {
+        if (f == null || f == Framing()) framings.edit().remove(id).apply() else framings.edit().putString(id, f.encode()).apply()
+        _framing.value = readFramings()
+    }
+
+    private fun readFramings(): Map<String, Framing> =
+        framings.all.mapNotNull { (k, v) -> Framing.decode(v as? String)?.let { k to it } }.toMap()
 
     init {
         scope.launch(Dispatchers.IO) {
@@ -157,6 +172,7 @@ class WallpaperStore(private val context: Context, private val scope: CoroutineS
         val turned = rotate(bitmap, 90)
         file.outputStream().use { turned.compress(Bitmap.CompressFormat.JPEG, 88, it) }
         thumbs.remove(id)
+        setFraming(id, null) // the old framing belonged to the old orientation
         select(id, turned)
         _photos.value = _photos.value.toList() // redraw thumbnails
         return true
@@ -167,6 +183,7 @@ class WallpaperStore(private val context: Context, private val scope: CoroutineS
         scope.launch(Dispatchers.IO) {
             File(dir, "$id.jpg").delete()
             thumbs.remove(id)
+            setFraming(id, null)
             refreshList()
             if (_selected.value == id) {
                 val next = _photos.value.firstOrNull()
