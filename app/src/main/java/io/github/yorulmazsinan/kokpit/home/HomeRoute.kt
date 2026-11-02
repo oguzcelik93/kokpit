@@ -49,6 +49,7 @@ fun HomeRoute(
     onRecovery: () -> Unit = {},
     onOpenParking: () -> Unit = {},
     onOpenFuel: () -> Unit = {},
+    onOpenTrack: (() -> Unit)? = null,
     onOpenPlaces: () -> Unit = {},
     onOpenWindow: () -> Unit = {},
 ) {
@@ -126,6 +127,7 @@ fun HomeRoute(
                 onWorkLong = { saveHere(context, container, PlaceKind.WORK) },
                 onParking = onOpenParking,
                 onFuel = onOpenFuel,
+                onTrack = onOpenTrack,
             ),
             onRecovery = onRecovery,
         ),

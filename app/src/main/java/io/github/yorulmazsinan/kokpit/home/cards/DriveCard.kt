@@ -9,6 +9,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LocalGasStation
 import androidx.compose.material.icons.outlined.LocalParking
 import androidx.compose.material.icons.outlined.Work
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -107,6 +108,7 @@ class CarShortcuts(
     val onWorkLong: () -> Unit = {},
     val onParking: () -> Unit = {},
     val onFuel: () -> Unit = {},
+    val onTrack: (() -> Unit)? = null,
 )
 
 /**
@@ -151,6 +153,7 @@ fun CompassCard(trip: TripSnapshot, modifier: Modifier = Modifier, onClick: () -
                     StripButton(Icons.Outlined.Work, stringResource(R.string.place_work), "strip_work", shortcuts.onWork, shortcuts.onWorkLong)
                     StripButton(Icons.Outlined.LocalParking, stringResource(R.string.parking_title), "strip_parking", shortcuts.onParking, null)
                     StripButton(Icons.Outlined.LocalGasStation, stringResource(R.string.fuel_title), "strip_fuel", shortcuts.onFuel, null)
+                    shortcuts.onTrack?.let { StripButton(Icons.Outlined.Flag, "Pist modu", "strip_track", it, null) }
                 }
             }
         }

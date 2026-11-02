@@ -22,7 +22,8 @@ class LocationSource(private val context: Context) {
 
     /** GPS fixes once a second; empty when permission is missing or there is no GPS. */
     @SuppressLint("MissingPermission")
-    fun fixes(): Flow<Fix> {
+    /** GPS fixes; [intervalMs] 1 s normally, as fast as the receiver goes for Pist modu. */
+    fun fixes(intervalMs: Long = 1000L): Flow<Fix> {
         if (!hasPermission() || LocationManager.GPS_PROVIDER !in manager.allProviders) return emptyFlow()
         return callbackFlow {
             val listener = object : LocationListener {
@@ -35,7 +36,7 @@ class LocationSource(private val context: Context) {
                 override fun onProviderEnabled(provider: String) = Unit
                 override fun onProviderDisabled(provider: String) = Unit
             }
-            manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, listener, Looper.getMainLooper())
+            manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, intervalMs, 0f, listener, Looper.getMainLooper())
             awaitClose { manager.removeUpdates(listener) }
         }
     }

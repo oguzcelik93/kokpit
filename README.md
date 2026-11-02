@@ -123,6 +123,14 @@ yapamaz; telefonda yalnızca 127.0.0.1'i dinleyen küçük bir köprüyle panel 
 Bluetooth Wi-Fi'dan yavaştır: Kumanda büyük fotoğrafları göndermeden önce telefonda
 küçültür (en uzun kenar 1920 px); karşılama videosu yüklemek birkaç dakika sürebilir.
 
+### Pist modu ve araç verileri
+Ana ekrandaki bayrak düğmesi **Pist modu**'nu açar: büyük hız ve maksimum hız, tek dokunuşla
+başlangıç çizgisi ("Çizgi burası") ve tur zamanları (son, en iyi, fark), 0–100 ölçümü,
+ünitede ivme sensörü varsa G ölçer. Ölçümler GPS iledir; ünite GPS almıyorsa çalışmaz.
+Ekran açık kalır. **Tüm araç verileri** ekranı ünitenin araçtan hangi değerleri gerçekten
+verdiğini canlı gösterir. Yağ sıcaklığı, turbo basıncı ve devir için yerler hazır; Bluetooth
+OBD adaptörüyle dolacaklar.
+
 ### USB bellekle kurulum ve güncelleme
 **İlk kurulum:** [Releases](https://github.com/oguzcelik93/kokpit/releases/latest) sayfasından `kokpit-<sürüm>.apk`'yı indirip USB belleğe kopyalayın, belleği takın, cihazın dosya
 yöneticisinden APK'ya dokunun ("bilinmeyen kaynaklar" sorulursa izin verin). Ev tuşu →

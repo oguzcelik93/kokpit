@@ -117,6 +117,7 @@ class AppContainer(context: Context) {
         }
     }
     val reminders = io.github.yorulmazsinan.kokpit.car.ReminderStore(appContext)
+    val carData = io.github.yorulmazsinan.kokpit.track.CarData(headUnit, scope)
     private val driverProfiles = io.github.yorulmazsinan.kokpit.car.DriverProfiles(this)
     val resume = ResumePlayback(appContext, nowPlaying, vendorModes, btMusic)
 

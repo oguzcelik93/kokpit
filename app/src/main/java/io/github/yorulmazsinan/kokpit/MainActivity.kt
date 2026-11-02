@@ -251,6 +251,8 @@ object Routes {
     const val PARKING = "parking"
     const val FUEL = "fuel"
     const val SERVICE = "service"
+    const val TRACK = "track"
+    const val CAR_DATA = "car-data"
     const val PLACES = "places"
     const val UPDATE = "update"
     const val BT_PHONES = "bt-phones"
@@ -455,6 +457,7 @@ private fun KokpitNavHost(
                 onRecovery = { nav.navigate(Routes.RECOVERY) { launchSingleTop = true } },
                 onOpenParking = { nav.navigate(Routes.PARKING) { launchSingleTop = true } },
                 onOpenFuel = { nav.navigate(Routes.FUEL) { launchSingleTop = true } },
+                onOpenTrack = { nav.navigate(Routes.TRACK) { launchSingleTop = true } },
                 onOpenPlaces = { nav.navigate(Routes.PLACES) { launchSingleTop = true } },
                 onOpenWindow = { nav.navigate(Routes.WINDOW) { launchSingleTop = true } },
             )
@@ -467,6 +470,8 @@ private fun KokpitNavHost(
         composable(Routes.UPDATE) { UpdateScreen(container, onBack = { nav.popBackStack() }) }
         composable(Routes.PARKING) { ParkingScreen(container.car, container.drive::lastPosition, onBack = { nav.popBackStack() }) }
         composable(Routes.FUEL) { LogbookScreen(container.car, container.trips, container.reminders, onBack = { nav.popBackStack() }) }
+        composable(Routes.TRACK) { io.github.yorulmazsinan.kokpit.track.TrackScreen(container, onBack = { nav.popBackStack() }, onCarData = { nav.navigate(Routes.CAR_DATA) { launchSingleTop = true } }) }
+        composable(Routes.CAR_DATA) { io.github.yorulmazsinan.kokpit.track.CarDataScreen(container, onBack = { nav.popBackStack() }) }
         composable(Routes.SERVICE) { LogbookScreen(container.car, container.trips, container.reminders, onBack = { nav.popBackStack() }, initial = io.github.yorulmazsinan.kokpit.car.LogbookTab.SERVICE) }
         composable(Routes.PLACES) {
             PlacesScreen(
